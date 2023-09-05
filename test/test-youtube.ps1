@@ -1,0 +1,2 @@
+vot-cli --output="./youtube" "https://www.youtube.com/watch?v=XBjfAEM4CPA&t=1s" "https://www.youtube.com/embed/XBjfAEM4CPA" "https://yewtu.be/watch?v=Ez0I874m2dw" "https://yewtu.be/embed/Ez0I874m2dw" "https://piped.video/watch?v=lJrHLnhJl-M" "https://piped.video/embed/lJrHLnhJl-M"
+# testing youtube & piped & invidious watch and embed
