@@ -1,0 +1,38 @@
+{
+  "dependencies": {
+    "axios": "^1.2.0",
+    "chalk": "^4.1.2",
+    "loading-cli": "^1.1.0",
+    "minimist": "^1.2.7",
+    "multer": "^1.4.5-lts.1",
+    "node-downloader-helper": "^2.1.5",
+    "protobufjs": "^7.1.2"
+  },
+  "name": "vot-cli",
+  "version": "1.0.0",
+  "description": "Voice Over Translate CLI Downloader",
+  "preferGlobal": true,
+  "type": "module",
+  "bin": "./index.js",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ilyhalight/voice-over-translation.git"
+  },
+  "keywords": [
+    "cli",
+    "vot",
+    "vot-cli",
+    "voice-over-translation",
+    "downloader"
+  ],
+  "author": "Toil",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ilyhalight/voice-over-translation/issues"
+  },
+  "homepage": "https://github.com/ilyhalight/voice-over-translation/vot-cli/#readme"
+}
