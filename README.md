@@ -1,6 +1,6 @@
 ## [FOSWLY] VOT-CLI
 
-English version: [Link](https://github.com/FOSWLY/vot-cli/blob/master/README-EN.md)
+English version: [Link](https://github.com/FOSWLY/vot-cli/blob/main/README-EN.md)
 
 Небольшой скрипт, позволяющий скачать перевод аудио перевод от Яндекса через терминал.
 

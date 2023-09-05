@@ -1,6 +1,6 @@
 ## [FOSWLY] VOT-CLI
 
-Русская версия: [Link](https://github.com/FOSWLY/vot-cli/blob/master/README.md)
+Русская версия: [Link](https://github.com/FOSWLY/vot-cli/blob/main/README.md)
 
 A small script that allows you to download an audio translation from Yandex via the terminal.
 
