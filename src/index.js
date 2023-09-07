@@ -44,12 +44,12 @@ const ARG_VERSION = argv.version || argv.v;
 
 if (availableLangs.includes(argv.lang)) {
   REQUEST_LANG = argv.lang;
-  logger.debug(`Request language is set to ${REQUEST_LANG}`);
+  console.log(`Request language is set to ${REQUEST_LANG}`);
 }
 
 if ([...availableLangs, ...additionalTTS].includes(argv.reslang)) {
   RESPONSE_LANG = argv.reslang;
-  logger.debug(`Response language is set to ${RESPONSE_LANG}`);
+  console.log(`Response language is set to ${RESPONSE_LANG}`);
 }
 
 // TASKS
@@ -76,6 +76,7 @@ const translate = async (finalURL, task) => {
           }
 
           task.title = "Video translated successfully.";
+          console.info(`Audio Link (${finalURL}): "${chalk.gray(urlOrError)}"`)
           // console.log("TEST", success, urlOrError)
           test = {
             success,
