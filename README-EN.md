@@ -23,8 +23,14 @@ A small script that allows you to download an audio translation from Yandex via 
   - `-h`, `--help` — Show help
   - `-v`, `--version` — Show script version
 
+## 💻 Installation
+1. Install NodeJS 18+
+2. Install vot-cli globally:
+```bash
+npm install -g vot-cli
+```
 
-## 📦 Installation
+## ⚙️ Installation for development
 1. Install NodeJS 18+
 2. Download and unpack the archive from vot-cli
 3. Install dependencies:
