@@ -13,7 +13,7 @@ import translateVideo from "./translateVideo.js";
 import logger from "./utils/logger.js";
 import downloadFile from "./download.js";
 
-const version = "1.1.0";
+const version = "1.1.1";
 const HELP_MESSAGE = `
 A small script that allows you to download an audio translation from Yandex via the terminal.
 
