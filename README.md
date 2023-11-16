@@ -50,7 +50,7 @@ npm link
 2. Скрипт для скачивания видео с встроенным переводом (надстройка над vot-cli):
     | OS | Оболочка | Автор | Ссылка |
     | --- | --- | --- | --- |
-    | Windows | PowerShell | Dragoy | [Ссылка](https://github.com/FOSWLY/vot-cli/scripts/)
+    | Windows | PowerShell | Dragoy | [Ссылка](https://github.com/FOSWLY/vot-cli/tree/main/scripts)
     | Unix | Fish | Musickiller | [Ссылка](https://gitlab.com/musickiller/fishy-voice-over/)
 
 ## ❗ Примечание

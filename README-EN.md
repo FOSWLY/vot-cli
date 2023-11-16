@@ -50,7 +50,7 @@ npm link
 2. Script for downloading videos with built-in translation (add-on over vot-cli):
     | OS | Shell | Author | Link |
     | --- | --- | --- | --- |
-    | Windows | PowerShell | Dragoy | [Link](https://github.com/FOSWLY/vot-cli/scripts/)
+    | Windows | PowerShell | Dragoy | [Link](https://github.com/FOSWLY/vot-cli/tree/main/scripts)
     | Unix | Fish | Musickiller | [Link](https://gitlab.com/musickiller/fishy-voice-over/)
 
 ## ❗ Note
