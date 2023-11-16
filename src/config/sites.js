@@ -106,6 +106,16 @@ const sites = () => {
       url: "https://www.tiktok.com/",
       match: sitesProxyTok,
     },
+    {
+      host: "rumble",
+      url: "https://rumble.com", // <-- there should be no slash because we take the whole pathname
+      match: /^rumble.com$/,
+    },
+    {
+      host: "eporner",
+      url: "https://www.eporner.com/",
+      match: /^(www.)?eporner.com$/,
+    },
   ];
 };
 
