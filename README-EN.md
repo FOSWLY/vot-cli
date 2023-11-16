@@ -12,6 +12,7 @@ A small script that allows you to download an audio translation from Yandex via 
   - `vot-cli --version` — show script version
   - `vot-cli --output=<path> <link>` — get the audio translation from the link and save it to the specified path
   - `vot-cli --output=<path> --reslang=en <link>` — get the audio translation into English and save it in the specified path
+  - `vot-cli --subs --output=<path> --lang=en <link>` — get English subtitles for the video and save them in the specified path
   - `vot-cli --output="." "https://www.youtube.com/watch?v=X98VPQCE_WI" "https://www.youtube.com/watch?v=djr8j-4fS3A&t=900s"` - example with real data
 
 ### Arguments:
@@ -22,6 +23,7 @@ A small script that allows you to download an audio translation from Yandex via 
 ### Options:
   - `-h`, `--help` — Show help
   - `-v`, `--version` — Show script version
+  - `--subs`, `--subtitles` — Get video subtitles instead of audio (the subtitle language for saving is taken from `--reslang`)
 
 ## 💻 Installation
 1. Install NodeJS 18+
