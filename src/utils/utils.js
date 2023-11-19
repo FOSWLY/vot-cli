@@ -1,13 +1,5 @@
 function clearFileName(name) {
-  name = name.replace("/", "");
-  name = name.replace("\\", "");
-  name = name.replace("|", "");
-  name = name.replace(":", "");
-  name = name.replace("*", "");
-  name = name.replace('"', "");
-  name = name.replace("<", "");
-  name = name.replace(">", "");
-  return name;
+  return name.replace(/[^\w.-]/g, "");
 }
 
 export { clearFileName };
