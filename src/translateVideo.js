@@ -6,10 +6,10 @@ export default async function translateVideo(
   requestLang,
   responseLang,
   translationHelp,
+  proxyData,
   callback,
 ) {
   // TODO: Use real duration (maybe)
-  // 0x40_75_50_00_00_00_00_00
   const duration = 341;
   await yandexRequests.requestVideoTranslation(
     url,
@@ -17,8 +17,8 @@ export default async function translateVideo(
     requestLang,
     responseLang,
     translationHelp,
+    proxyData,
     (success, response) => {
-      // console.log(success, response)
       if (!success) {
         callback(false, "Failed to request video translation");
         return;
@@ -26,7 +26,6 @@ export default async function translateVideo(
 
       const translateResponse =
         yandexProtobuf.decodeTranslationResponse(response);
-      // console.log(translateResponse)
       switch (translateResponse.status) {
         case 0:
           callback(false, translateResponse.message);

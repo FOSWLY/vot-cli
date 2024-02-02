@@ -64,4 +64,17 @@ const sitesProxyTok = [
   "proxitok.privacy.com.de", // maybe instance doesn't working
 ];
 
-export { sitesInvidious, sitesPiped, sitesProxyTok };
+// Sites host Peertube. I tested the performance only on dalek.zone and tube.shanti.cafe
+const sitesPeertube = [
+  "peertube.1312.media",
+  "tube.shanti.cafe",
+  "bee-tube.fr",
+  "video.sadmin.io",
+  "dalek.zone",
+  "review.peertube.biz",
+  "peervideo.club",
+  "tube.la-dina.net",
+  "peertube.tmp.rcp.tf",
+];
+
+export { sitesInvidious, sitesPiped, sitesProxyTok, sitesPeertube };

@@ -16,6 +16,12 @@ function validate(site) {
     return false;
   }
 
+  if (url.pathname.endsWith(".mp4")) {
+    return {
+      host: "custom",
+    };
+  }
+
   return sites.find((s) => {
     const isMathes = (match) => {
       return (

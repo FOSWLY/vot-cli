@@ -14,8 +14,10 @@ import downloadFile from "./download.js";
 import { clearFileName } from "./utils/utils.js";
 import yandexRequests from "./yandexRequests.js";
 import yandexProtobuf from "./yandexProtobuf.js";
+import parseProxy from "./proxy.js";
+import coursehunterUtils from "./utils/coursehunter.js";
 
-const version = "1.2.0";
+const version = "1.3.0";
 const HELP_MESSAGE = `
 A small script that allows you to download an audio translation from Yandex via the terminal.
 
@@ -26,6 +28,8 @@ Args:
   --output — Set the directory to download
   --lang — Set the source video language
   --reslang — Set the audio track language (You can see all supported languages in the documentation. Default: ru)
+  --proxy — Set proxy in format ([<PROTOCOL>://]<USERNAME>:<PASSWORD>@<HOST>[:<port>])
+  --force-proxy — Don't start the transfer if the proxy could not be identified (true | false. Default: false)
 
 Options:
   -h, --help — Show help
@@ -36,6 +40,7 @@ Options:
 // LANG PAIR
 let REQUEST_LANG = "en";
 let RESPONSE_LANG = "ru";
+let proxyData = false;
 
 // ARG PARSER
 const argv = parseArgs(process.argv.slice(2));
@@ -45,6 +50,8 @@ const OUTPUT_DIR = argv.output;
 const IS_SUBS_REQ = argv.subs || argv.subtitles;
 const ARG_HELP = argv.help || argv.h;
 const ARG_VERSION = argv.version || argv.v;
+const PROXY_STRING = argv.proxy;
+let FORCE_PROXY = argv["force-proxy"] ?? false;
 
 if (availableLangs.includes(argv.lang)) {
   REQUEST_LANG = argv.lang;
@@ -57,6 +64,18 @@ if (
 ) {
   RESPONSE_LANG = argv.reslang;
   console.log(`Response language is set to ${RESPONSE_LANG}`);
+}
+
+if (PROXY_STRING) {
+  proxyData = parseProxy(PROXY_STRING);
+}
+
+if (FORCE_PROXY && !proxyData) {
+  throw new Error(
+    chalk.red(
+      "vot-cli operation was interrupted due to the force-proxy option",
+    ),
+  );
 }
 
 // TASKS
@@ -74,6 +93,7 @@ const translate = async (finalURL, task) => {
       REQUEST_LANG,
       RESPONSE_LANG,
       null,
+      proxyData,
       (success, urlOrError) => {
         if (success) {
           if (!urlOrError) {
@@ -116,6 +136,7 @@ const fetchSubtitles = async (finalURL, task) => {
     await yandexRequests.requestVideoSubtitles(
       finalURL,
       REQUEST_LANG,
+      proxyData,
       (success, response) => {
         if (!success) {
           throw new Error(chalk.red("Failed to get Yandex subtitles"));
@@ -204,7 +225,24 @@ async function main() {
       continue;
     }
 
-    const videoId = getVideoId(service.host, url);
+    let videoId = getVideoId(service.host, url);
+    if (
+      typeof videoId === "object" &&
+      ["coursehunter"].includes(service.host)
+    ) {
+      const [statusOrID, lessonId] = videoId;
+      if (!statusOrID) {
+        console.error(chalk.red(`Entered unsupported link: ${url}`));
+        continue;
+      }
+
+      const coursehunterData = await coursehunterUtils
+        .getVideoData(statusOrID, lessonId)
+        .then((data) => data);
+
+      videoId = coursehunterData.url;
+    }
+
     if (!videoId) {
       console.error(chalk.red(`Entered unsupported link: ${url}`));
       continue;
@@ -219,7 +257,10 @@ async function main() {
               {
                 title: `Forming a link to the video`,
                 task: async () => {
-                  const finalURL = `${service.url}${videoId}`;
+                  const finalURL =
+                    videoId.startsWith("https://") || service.host === "custom"
+                      ? videoId
+                      : `${service.url}${videoId}`;
                   if (!finalURL) {
                     throw new Error(`Entered unsupported link: ${finalURL}`);
                   }

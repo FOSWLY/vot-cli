@@ -11,6 +11,7 @@ async function requestVideoTranslation(
   requestLang,
   responseLang,
   translationHelp,
+  proxyData,
   callback,
 ) {
   try {
@@ -31,6 +32,7 @@ async function requestVideoTranslation(
         "Vtrans-Signature": await getSignature(body),
         "Sec-Vtrans-Token": getUUID(false),
       },
+      proxyData,
       callback,
     );
   } catch (exception) {
@@ -41,7 +43,7 @@ async function requestVideoTranslation(
 }
 
 // Request video subtitles from Yandex API
-async function requestVideoSubtitles(url, requestLang, callback) {
+async function requestVideoSubtitles(url, requestLang, proxyData, callback) {
   try {
     logger.debug("requestVideoSubtitles");
     // Initialize variables
@@ -54,6 +56,7 @@ async function requestVideoSubtitles(url, requestLang, callback) {
         "Vsubs-Signature": await getSignature(body),
         "Sec-Vsubs-Token": getUUID(false),
       },
+      proxyData,
       callback,
     );
   } catch (exception) {

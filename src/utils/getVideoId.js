@@ -12,6 +12,8 @@ export default function getVideoId(service, url) {
   }
 
   switch (service) {
+    case "custom":
+      return url.href;
     case "piped":
     case "invidious":
     case "youtube":
@@ -111,6 +113,41 @@ export default function getVideoId(service, url) {
     case "eporner":
       // ! LINK SHOULD BE LIKE THIS eporner.com/video-XXXXXXXXX/isdfsd-dfjsdfjsdf-dsfsdf-dsfsda-dsad-ddsd
       return url.pathname.match(/video-([^/]+)\/([^/]+)/)?.[0];
+    case "peertube":
+      return url.pathname.match(/\/w\/([^/]+)/)?.[0];
+    case "dailymotion": {
+      return url.pathname;
+    }
+    case "trovo": {
+      if (!url.pathname.startsWith("/s/")) {
+        return false;
+      }
+
+      const vid = url.searchParams.get("vid");
+      if (!vid) {
+        return false;
+      }
+
+      const path = url.pathname.match(/([^/]+)\/([\d]+)/)?.[0];
+      if (!path) {
+        return false;
+      }
+
+      return `${path}?vid=${vid}`;
+    }
+    case "yandexdisk":
+      return url.pathname.match(/\/i\/([^/]+)/)?.[1];
+    case "coursehunter": {
+      const videoId = url.pathname.match(/\/course\/([^/]+)/)?.[1];
+      if (!videoId) {
+        return [false, 0];
+      }
+
+      return [videoId, Number(url.searchParams.get("lesson") ?? 1)];
+    }
+    case "ok.ru": {
+      return url.pathname.match(/\/video\/(\d+)/)?.[0];
+    }
     default:
       return false;
   }

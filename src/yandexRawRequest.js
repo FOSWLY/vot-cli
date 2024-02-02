@@ -2,7 +2,13 @@ import axios from "axios";
 import { workerHost, yandexUserAgent } from "./config/config.js";
 import logger from "./utils/logger.js";
 
-export default async function yandexRawRequest(path, body, headers, callback) {
+export default async function yandexRawRequest(
+  path,
+  body,
+  headers,
+  proxyData,
+  callback,
+) {
   logger.debug("yandexRequest:", path);
   await axios({
     url: `https://${workerHost}${path}`,
@@ -22,6 +28,7 @@ export default async function yandexRawRequest(path, body, headers, callback) {
       },
       ...headers,
     },
+    proxy: proxyData,
     responseType: "arraybuffer",
     data: body,
   })
@@ -29,7 +36,8 @@ export default async function yandexRawRequest(path, body, headers, callback) {
       logger.debug("yandexRequest:", response.status, response.data);
       callback(response.status === 200, response.data);
     })
-    .catch(() => {
-      callback(false);
+    .catch((err) => {
+      console.error(err);
+      callback(true, err.data);
     });
 }

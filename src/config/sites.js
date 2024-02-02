@@ -2,6 +2,7 @@ import {
   sitesInvidious,
   sitesPiped,
   sitesProxyTok,
+  sitesPeertube,
 } from "./alternativeUrls.js";
 
 const sites = () => {
@@ -35,6 +36,11 @@ const sites = () => {
       host: "vk",
       url: "https://vk.com/video?z=",
       match: /^(www.|m.)?vk.(com|ru)$/,
+    },
+    {
+      host: "ok.ru",
+      url: "https://ok.ru/",
+      match: /^ok.ru$/,
     },
     {
       host: "vimeo",
@@ -115,6 +121,31 @@ const sites = () => {
       host: "eporner",
       url: "https://www.eporner.com/",
       match: /^(www.)?eporner.com$/,
+    },
+    {
+      host: "peertube",
+      url: "https://tube.shanti.cafe", // This is a stub. The present value is set using window.location.origin. Check "src/index.js:videoObserver.onVideoAdded.addListener" to get more info
+      match: sitesPeertube,
+    },
+    {
+      host: "dailymotion",
+      url: "https://www.dailymotion.com/video/", // This is a stub. The present value is set using window.location.origin. Check "src/index.js:videoObserver.onVideoAdded.addListener" to get more info
+      match: /^(www.)?dailymotion.com$/,
+    },
+    {
+      host: "trovo",
+      url: "https://trovo.live/s/",
+      match: /^trovo.live$/,
+    },
+    {
+      host: "yandexdisk",
+      url: "https://disk.yandex.ru/i/",
+      match: /^disk.yandex.ru$/,
+    },
+    {
+      host: "coursehunter",
+      url: "https://coursehunter.net/course/",
+      match: /^coursehunter.net$/,
     },
   ];
 };
