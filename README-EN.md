@@ -16,9 +16,10 @@ A small script that allows you to download an audio translation from Yandex via 
   - `vot-cli --output="." "https://www.youtube.com/watch?v=X98VPQCE_WI" "https://www.youtube.com/watch?v=djr8j-4fS3A&t=900s"` - example with real data
 
 ### Arguments:
-  - `--output` — specify the path to save the audio translation file
-  - `--lang` — specify the source video language (look [wiki](https://github.com/FOSWLY/vot-cli/wiki/%5BEN%5D-Supported-langs), to find out which languages are supported)
-  - `--reslang` — Указать язык полученноого аудио файла (look [wiki](https://github.com/FOSWLY/vot-cli/wiki/%5BEN%5D-Supported-langs), to find out which languages are supported)
+  - `--output` — set the path to save the audio translation file
+  - `--lang` — set the source video language (look [wiki](https://github.com/FOSWLY/vot-cli/wiki/%5BEN%5D-Supported-langs), to find out which languages are supported)
+  - `--reslang` — set the language of the received audio file (look [wiki](https://github.com/FOSWLY/vot-cli/wiki/%5BEN%5D-Supported-langs), to find out which languages are supported)
+  - `--proxy`  — set HTTP or HTTPS proxy in the format `[<PROTOCOL>://]<USERNAME>:<PASSWORD>@<HOST>[:<port>]`
 
 ### Options:
   - `-h`, `--help` — Show help
