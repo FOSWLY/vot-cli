@@ -1,3 +1,23 @@
+# 1.3.0
+- Добавлена поддержка кастомных ссылок с окончанием на `.mp4`
+- Добавлена поддержка Одноклассников (`ok.ru`)
+- Добавлена поддержка Peertube. Были добавлены 9 крупных сайтов, хостящих Peertube (libre.video не поддерживается - не просите):
+  - `tube.shanti.cafe`
+  - `bee-tube.fr`
+  - `video.sadmin.io`
+  - `dalek.zone`
+  - `review.peertube.biz`
+  - `peervideo.club`
+  - `tube.la-dina.net`
+  - `peertube.tmp.rcp.tf`
+
+- Добавлена поддержка Dailymotion (`dailymotion.com/video/`)
+- Добавлена поддержка Trovo (`trovo.live/s/`)
+- Добавлена поддержка Яндекс Диск (`disk.yandex.ru/[i|s|d]/`)
+- Добавлена поддержка Coursehunter (`coursehunter.net/course/`). Для перевода конкретного урока используйте query-параметр `?lesson=НОМЕР_УРОКА`
+- Минимальная версия NodeJS в NPM пакете зафиксирована на **NodeJS 18**
+- Добавлена эксперементальная поддержка HTTP и HTTPS прокси в формате `[<PROTOCOL>://]<USERNAME>:<PASSWORD>@<HOST>[:<port>]` (например: `http://127.0.0.1:8788`). Для установки прокси используйте аргумент `--proxy`
+
 # 1.2.1
 - Еще один фикс загрузки #4
 
