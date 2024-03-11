@@ -20,7 +20,7 @@ function ProcessVideo($video_link, $original_sound_ratio) {
     New-Item -ItemType Directory -Path $temp_audio -ErrorAction SilentlyContinue | Out-Null
 
     yt-dlp -o $temp_video $video_link
-    $video_full_name = Get-ChildItem $temp_video_dir
+    $video_full_name = Join-Path (Get-Location) (Get-ChildItem $temp_video_dir).Name
     vot-cli $video_link --output $temp_audio
 
     $temp_video_file = (Get-ChildItem -Path $temp_video_dir)[0].FullName
