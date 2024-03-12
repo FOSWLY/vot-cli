@@ -20,7 +20,7 @@ function ProcessVideo($video_link, $original_sound_ratio) {
     New-Item -ItemType Directory -Path $temp_audio -ErrorAction SilentlyContinue | Out-Null
 
     yt-dlp -o $temp_video $video_link
-    $video_full_name = Get-ChildItem $temp_video_dir
+    $video_full_name = Join-Path (Get-Location) (Get-ChildItem $temp_video_dir).Name
     vot-cli $video_link --output $temp_audio
 
     $temp_video_file = (Get-ChildItem -Path $temp_video_dir)[0].FullName
@@ -47,8 +47,15 @@ $temp_video_dir = "$temp_dir/video"
 $temp_video = "$temp_video_dir/%(title)s.%(ext)s"
 $temp_audio = "$temp_dir/audio"
 
-$video_links = $args[0..($args.Length - 2)]
-$volume_ratio_arg = $args[-1]
+if ($args.Length -eq 1) {
+    $video_links = $args[0..($args.Length - 1)]
+    $volume_ratio_arg = $original_sound_ratio
+} else {
+    # если аргументов >= 2, считаем, что последний аргумент это возможная громкость
+    $video_links = $args[0..($args.Length - 2)]
+    $volume_ratio_arg = $args[-1]
+}
+
 
 # If the last argument is a number, set the original sound ratio to that one
 if ($volume_ratio_arg -as [double]) {
@@ -59,6 +66,7 @@ if ($volume_ratio_arg -as [double]) {
     $video_links += $volume_ratio_arg
 }
 
+
 # Check that var is init
 if ($video_links) {
     foreach ($video_link in $video_links) {
@@ -66,7 +74,7 @@ if ($video_links) {
             Write-Host "Error: Link not entered."
             continue
         }
-        
+
         Write-Host "Processing video: $video_link"
         ProcessVideo $video_link $original_sound_ratio
     }
