@@ -140,7 +140,7 @@ const sites = () => {
     {
       host: "yandexdisk",
       url: "https://disk.yandex.ru/i/",
-      match: /^disk.yandex.ru$/,
+      match: /^disk.yandex.ru|yadi.sk$/,
     },
     {
       host: "coursehunter",
