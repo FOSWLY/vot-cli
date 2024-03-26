@@ -53,7 +53,7 @@ npm link
     | --- | --- | --- | --- |
     | Windows | PowerShell | Dragoy | [Link](https://github.com/FOSWLY/vot-cli/tree/main/scripts)
     | Unix | Fish | Musickiller | [Link](https://gitlab.com/musickiller/fishy-voice-over/)
-    | Unix | Bash | s-n-alexeyev | [Ссылка](https://github.com/s-n-alexeyev/yvt)
+    | Linux | Bash | s-n-alexeyev | [Ссылка](https://github.com/s-n-alexeyev/yvt)
 
 ## ❗ Note
 1. Wrap links in quotation marks in order to avoid errors
