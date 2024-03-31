@@ -1,3 +1,10 @@
+# 1.4.0
+- Добавлен новый аргумент `--output-file`. Он позволяет установить имя файла для сохранения (требует указания пути сохранения аудио файла перевода в аргументе "--output")
+- `Yandex Protobuf` обновлен до актуальной версии из [voice-over-translation](https://github.com/ilyhalight/voice-over-translation)
+- Добавлена поддержка перевода Google Drive  (только публичные ссылки, например: `https://drive.google.com/file/d/FILE_ID`)
+- Добавлена поддержка перевода YouTube Shorts (`https://youtube.com/shorts/VIDEO_ID`)
+- Добавлена поддержка короткой ссылки на YouTube `youtu.be`
+
 # 1.3.1
 - Добавлена поддержка короткой ссылки на yandex disk (`yadi.sk`)
 
