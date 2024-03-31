@@ -17,6 +17,7 @@ A small script that allows you to download an audio translation from Yandex via 
 
 ### Arguments:
   - `--output` — set the path to save the audio translation file
+  - `--output-file` — set the file name to download (requires specifying a dir to download in "--output" argument)
   - `--lang` — set the source video language (look [wiki](https://github.com/FOSWLY/vot-cli/wiki/%5BEN%5D-Supported-langs), to find out which languages are supported)
   - `--reslang` — set the language of the received audio file (look [wiki](https://github.com/FOSWLY/vot-cli/wiki/%5BEN%5D-Supported-langs), to find out which languages are supported)
   - `--proxy`  — set HTTP or HTTPS proxy in the format `[<PROTOCOL>://]<USERNAME>:<PASSWORD>@<HOST>[:<port>]`

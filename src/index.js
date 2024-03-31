@@ -17,7 +17,7 @@ import yandexProtobuf from "./yandexProtobuf.js";
 import parseProxy from "./proxy.js";
 import coursehunterUtils from "./utils/coursehunter.js";
 
-const version = "1.3.0";
+const version = "1.4.0";
 const HELP_MESSAGE = `
 A small script that allows you to download an audio translation from Yandex via the terminal.
 
@@ -26,6 +26,7 @@ Usage:
 
 Args:
   --output — Set the directory to download
+  --output-file — Set the file name to download (requires specifying a dir to download in "--output" argument)
   --lang — Set the source video language
   --reslang — Set the audio track language (You can see all supported languages in the documentation. Default: ru)
   --proxy — Set proxy in format ([<PROTOCOL>://]<USERNAME>:<PASSWORD>@<HOST>[:<port>])
@@ -47,6 +48,7 @@ const argv = parseArgs(process.argv.slice(2));
 
 const ARG_LINKS = argv._;
 const OUTPUT_DIR = argv.output;
+const OUTPUT_FILE = argv["output-file"];
 const IS_SUBS_REQ = argv.subs || argv.subtitles;
 const ARG_HELP = argv.help || argv.h;
 const ARG_VERSION = argv.version || argv.v;
@@ -344,9 +346,11 @@ async function main() {
                   }
 
                   const taskSubTitle = `(ID: ${videoId})`;
-                  const filename = `${clearFileName(
-                    videoId,
-                  )}---${uuidv4()}.mp3`;
+                  const filename = OUTPUT_FILE
+                    ? OUTPUT_FILE.endsWith(".mp3")
+                      ? OUTPUT_FILE
+                      : `${OUTPUT_FILE}.mp3`
+                    : `${clearFileName(videoId)}---${uuidv4()}.mp3`;
                   await downloadFile(
                     parent.translateResult.urlOrError,
                     `${OUTPUT_DIR}/${filename}`,
@@ -393,9 +397,13 @@ async function main() {
                   }
 
                   const taskSubTitle = `(ID: ${videoId})`;
-                  const filename = `${subOnReqLang.language}---${clearFileName(
-                    videoId,
-                  )}---${uuidv4()}.json`;
+                  const filename = OUTPUT_FILE
+                    ? OUTPUT_FILE.endsWith(".json")
+                      ? OUTPUT_FILE
+                      : `${OUTPUT_FILE}.json`
+                    : `${subOnReqLang.language}---${clearFileName(
+                        videoId,
+                      )}---${uuidv4()}.json`;
                   await downloadFile(
                     subOnReqLang.url,
                     `${OUTPUT_DIR}/${filename}`,
