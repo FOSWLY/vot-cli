@@ -9,12 +9,12 @@ const VideoTranslationHelpObject = new protobuf.Type(
 
 const VideoTranslationRequest = new protobuf.Type("VideoTranslationRequest")
   .add(new protobuf.Field("url", 3, "string"))
-  .add(new protobuf.Field("deviceId", 4, "string")) // removed?
+  .add(new protobuf.Field("deviceId", 4, "string")) // used in mobile version
   .add(new protobuf.Field("firstRequest", 5, "bool")) // true for the first request, false for subsequent ones
   .add(new protobuf.Field("duration", 6, "double"))
   .add(new protobuf.Field("unknown2", 7, "int32")) // 1 1
   .add(new protobuf.Field("language", 8, "string")) // source language code
-  .add(new protobuf.Field("unknown3", 9, "int32")) // 0 0
+  .add(new protobuf.Field("unknown3", 9, "int32")) // 0 - without translationHelp | 1 - with translationHelp (??? But it works without it)
   .add(new protobuf.Field("unknown4", 10, "int32")) // 0 0
   .add(
     new protobuf.Field(
@@ -25,7 +25,9 @@ const VideoTranslationRequest = new protobuf.Type("VideoTranslationRequest")
     ),
   ) // array for translation assistance ([0] -> {2: link to video, 1: "video_file_url"}, [1] -> {2: link to subtitles, 1: "subtitles_file_url"})
   .add(new protobuf.Field("responseLanguage", 14, "string"))
-  .add(new protobuf.Field("unknown5", 15, "int32")); // 0
+  .add(new protobuf.Field("unknown5", 15, "int32")) // 0
+  .add(new protobuf.Field("unknown6", 16, "int32")) // 1
+  .add(new protobuf.Field("unknown7", 17, "int32")); // 0
 
 const VideoSubtitlesRequest = new protobuf.Type("VideoSubtitlesRequest")
   .add(new protobuf.Field("url", 1, "string"))
@@ -115,6 +117,8 @@ export default {
       translationHelp,
       responseLanguage: responseLang,
       unknown5: 0,
+      unknown6: 1,
+      unknown7: 0,
     }).finish();
   },
   decodeTranslationResponse(response) {
