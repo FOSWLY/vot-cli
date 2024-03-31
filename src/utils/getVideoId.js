@@ -17,8 +17,13 @@ export default function getVideoId(service, url) {
     case "piped":
     case "invidious":
     case "youtube":
+      if (url.hostname === "youtu.be") {
+        url.search = `?v=${url.pathname.replace("/", "")}`;
+        url.pathname = "/watch";
+      }
+
       return (
-        url.pathname.match(/(?:watch|embed)\/([^/]+)/)?.[1] ||
+        url.pathname.match(/(?:watch|embed|shorts)\/([^/]+)/)?.[1] ||
         url.searchParams.get("v")
       );
     case "vk":
@@ -148,6 +153,8 @@ export default function getVideoId(service, url) {
     case "ok.ru": {
       return url.pathname.match(/\/video\/(\d+)/)?.[0];
     }
+    case "googledrive":
+      return url.pathname.match(/\/file\/d\/([^/]+)/)?.[1];
     default:
       return false;
   }

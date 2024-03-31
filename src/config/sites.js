@@ -15,7 +15,7 @@ const sites = () => {
     {
       host: "youtube",
       url: "https://youtu.be/",
-      match: /^(www.|m.)?youtube(-nocookie)?.com$/,
+      match: /^((www.|m.)?youtube(-nocookie)?.com)|(youtu.be)$/,
     },
     {
       host: "twitch",
@@ -146,6 +146,12 @@ const sites = () => {
       host: "coursehunter",
       url: "https://coursehunter.net/course/",
       match: /^coursehunter.net$/,
+    },
+    {
+      host: "googledrive",
+      url: "https://drive.google.com/file/d/",
+      match: /^drive.google.com$/,
+      selector: ".html5-video-container",
     },
   ];
 };
