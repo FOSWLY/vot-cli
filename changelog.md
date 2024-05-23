@@ -1,3 +1,6 @@
+# 1.4.1
+- Обновлен Yandex HMAC
+
 # 1.4.0
 - Добавлен новый аргумент `--output-file`. Он позволяет установить имя файла для сохранения (требует указания пути сохранения аудио файла перевода в аргументе "--output")
 - `Yandex Protobuf` обновлен до актуальной версии из [voice-over-translation](https://github.com/ilyhalight/voice-over-translation)

@@ -1,6 +1,6 @@
 {
   "name": "vot-cli",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "A small script that allows you to download an audio translation from Yandex via the terminal.",
   "type": "module",
   "main": "./src/index.js",
