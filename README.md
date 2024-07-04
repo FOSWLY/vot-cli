@@ -19,7 +19,7 @@ English version: [Link](https://github.com/FOSWLY/vot-cli/blob/main/README-EN.md
   - `--output` — установить путь сохранения аудио файла перевода
   - `--output-file` — установить имя файла для сохранения (требует указания пути сохранения аудио файла перевода в аргументе "--output")
   - `--lang` — установить язык исходного видео (см. [вики](https://github.com/FOSWLY/vot-cli/wiki/%5BRU%5D-Supported-langs), чтобы узнать какие языки поддерживаются)
-  - `--reslang` — установить язык полученноого аудио файла (см. [вики](https://github.com/FOSWLY/vot-cli/wiki/%5BRU%5D-Supported-langs), чтобы узнать какие языки поддерживаются)
+  - `--reslang` — установить язык полученного аудио файла (см. [вики](https://github.com/FOSWLY/vot-cli/wiki/%5BRU%5D-Supported-langs), чтобы узнать какие языки поддерживаются)
   - `--proxy`  — установить HTTP или HTTPS прокси в формате `[<PROTOCOL>://]<USERNAME>:<PASSWORD>@<HOST>[:<port>]`
 
 ### Опции:
