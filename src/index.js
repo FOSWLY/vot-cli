@@ -17,7 +17,7 @@ import yandexProtobuf from "./yandexProtobuf.js";
 import parseProxy from "./proxy.js";
 import coursehunterUtils from "./utils/coursehunter.js";
 
-const version = "1.4.1";
+const version = "1.4.2";
 const HELP_MESSAGE = `
 A small script that allows you to download an audio translation from Yandex via the terminal.
 

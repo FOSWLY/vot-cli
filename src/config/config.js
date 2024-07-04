@@ -1,4 +1,4 @@
-const debug = true;
+const debug = false;
 const workerHost = "api.browser.yandex.ru";
 
 const yandexHmacKey = "bt8xH3VOlb4mqf0nqAibnDOoiPlXsisf";

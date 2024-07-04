@@ -23,7 +23,7 @@ export default function getVideoId(service, url) {
       }
 
       return (
-        url.pathname.match(/(?:watch|embed|shorts)\/([^/]+)/)?.[1] ||
+        url.pathname.match(/(?:watch|embed|live|shorts)\/([^/]+)/)?.[1] ||
         url.searchParams.get("v")
       );
     case "vk":
