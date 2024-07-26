@@ -400,7 +400,7 @@ async function main() {
 
                   const taskSubTitle = `(ID: ${videoId})`;
                   const filename = OUTPUT_FILE
-                    ? OUTPUT_FILE.endsWith("." + RESPONSE_SUBTITLES_FORMAT)
+                    ? OUTPUT_FILE.endsWith(`.${RESPONSE_SUBTITLES_FORMAT}`)
                       ? OUTPUT_FILE
                       : `${OUTPUT_FILE}.${RESPONSE_SUBTITLES_FORMAT}`
                     : `${subOnReqLang.language}---${clearFileName(
