@@ -1,5 +1,7 @@
 import fs from "fs";
+import { Writable } from "stream";
 import axios from "axios";
+import { jsonToSrt } from "./utils/utils.js";
 
 function calcPercents(current, max) {
   return ((current / max) * 100).toFixed(1);
@@ -9,7 +11,7 @@ export default async function downloadFile(url, outputPath, subtask, videoId) {
   if (!url) {
     throw new Error("Invalid download link");
   }
-
+  const IS_NEED_CONVERT = outputPath.endsWith(".srt");
   const writer = fs.createWriteStream(outputPath);
   const { data, headers } = await axios({
     method: "get",
@@ -31,7 +33,23 @@ export default async function downloadFile(url, outputPath, subtask, videoId) {
     // console.log(calcPercents(downloadedLength, totalLength))
   });
 
-  data.pipe(writer);
+  if (IS_NEED_CONVERT) {
+    let dataBuffer = "";
+    const writableStream = new Writable({
+      write(chunk, encoding, callback) {
+        dataBuffer += chunk.toString();
+        callback();
+      },
+    });
+    data.pipe(writableStream);
+    data.on("end", () => {
+      const jsonData = JSON.parse(dataBuffer);
+      writer.write(jsonToSrt(jsonData["subtitles"]));
+      writer.end();
+    });
+  } else {
+    data.pipe(writer);
+  }
 
   return new Promise((resolve, reject) => {
     writer.on("finish", resolve);

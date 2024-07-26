@@ -49,7 +49,9 @@ const argv = parseArgs(process.argv.slice(2));
 const ARG_LINKS = argv._;
 const OUTPUT_DIR = argv.output;
 const OUTPUT_FILE = argv["output-file"];
-const IS_SUBS_REQ = argv.subs || argv.subtitles;
+const IS_SUBS_FORMAT_SRT = argv["subs-srt"] || argv["subtitles-srt"];
+const RESPONSE_SUBTITLES_FORMAT = IS_SUBS_FORMAT_SRT ? "srt" : "json";
+const IS_SUBS_REQ = argv.subs || argv.subtitles || IS_SUBS_FORMAT_SRT;
 const ARG_HELP = argv.help || argv.h;
 const ARG_VERSION = argv.version || argv.v;
 const PROXY_STRING = argv.proxy;
@@ -398,12 +400,12 @@ async function main() {
 
                   const taskSubTitle = `(ID: ${videoId})`;
                   const filename = OUTPUT_FILE
-                    ? OUTPUT_FILE.endsWith(".json")
+                    ? OUTPUT_FILE.endsWith("." + RESPONSE_SUBTITLES_FORMAT)
                       ? OUTPUT_FILE
-                      : `${OUTPUT_FILE}.json`
+                      : `${OUTPUT_FILE}.${RESPONSE_SUBTITLES_FORMAT}`
                     : `${subOnReqLang.language}---${clearFileName(
                         videoId,
-                      )}---${uuidv4()}.json`;
+                      )}---${uuidv4()}.${RESPONSE_SUBTITLES_FORMAT}`;
                   await downloadFile(
                     subOnReqLang.url,
                     `${OUTPUT_DIR}/${filename}`,
