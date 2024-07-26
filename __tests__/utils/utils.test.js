@@ -1,7 +1,7 @@
 import { jsonToSrt } from "../../src/utils/utils.js";
 
 describe("utils", () => {
-  it("conver YandexSubtitles json to srt", () => {
+  it("convert YandexSubtitles json to srt", () => {
     const jsonYS = [
       { text: "Привет", startMs: 2222.0, durationMs: 3610.0 },
       { text: "мир", startMs: 26050.0, durationMs: 970.0 },
