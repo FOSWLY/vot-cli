@@ -23,12 +23,12 @@ export default function getVideoId(service, url) {
       }
 
       return (
-        url.pathname.match(/(?:watch|embed|live|shorts)\/([^/]+)/)?.[1] ||
+        /(?:watch|embed|live|shorts)\/([^/]+)/.exec(url.pathname)?.[1] ||
         url.searchParams.get("v")
       );
     case "vk":
-      if (url.pathname.match(/^\/video-?[0-9]{8,9}_[0-9]{9}$/)) {
-        return url.pathname.match(/^\/video-?[0-9]{8,9}_[0-9]{9}$/)[0].slice(1);
+      if (/^\/video-?[0-9]{8,9}_[0-9]{9}$/.exec(url.pathname)) {
+        return /^\/video-?[0-9]{8,9}_[0-9]{9}$/.exec(url.pathname)[0].slice(1);
       } else if (url.searchParams.get("z")) {
         return url.searchParams.get("z").split("/")[0];
       } else if (url.searchParams.get("oid") && url.searchParams.get("id")) {
@@ -41,7 +41,7 @@ export default function getVideoId(service, url) {
     case "nine_gag":
     case "9gag":
     case "gag":
-      return url.pathname.match(/gag\/([^/]+)/)?.[1];
+      return /gag\/([^/]+)/.exec(url.pathname)?.[1];
     case "twitch":
       // clips.twitch.tv unsupported
 
@@ -50,28 +50,28 @@ export default function getVideoId(service, url) {
         url.searchParams.get("video")
       ) {
         return `videos/${url.searchParams.get("video")}`;
-      } else if (url.pathname.match(/([^/]+)\/(?:clip)\/([^/]+)/)) {
-        return url.pathname.match(/([^/]+)\/(?:clip)\/([^/]+)/)[0];
+      } else if (/([^/]+)\/(?:clip)\/([^/]+)/.exec(url.pathname)) {
+        return /([^/]+)\/(?:clip)\/([^/]+)/.exec(url.pathname)[0];
       } else {
-        return url.pathname.match(/(?:videos)\/([^/]+)/)?.[0];
+        return /(?:videos)\/([^/]+)/.exec(url.pathname)?.[0];
       }
     case "proxytok":
     case "tiktok":
-      return url.pathname.match(/([^/]+)\/video\/([^/]+)/)?.[0];
+      return /([^/]+)\/video\/([^/]+)/.exec(url.pathname)?.[0];
     case "vimeo":
       return (
-        url.pathname.match(/[^/]+\/[^/]+$/)?.[0] ||
-        url.pathname.match(/[^/]+$/)?.[0]
+        /[^/]+\/[^/]+$/.exec(url.pathname)?.[0] ||
+        /[^/]+$/.exec(url.pathname)?.[0]
       );
     case "xvideos":
-      return url.pathname.match(/[^/]+\/[^/]+$/)?.[0];
+      return /[^/]+\/[^/]+$/.exec(url.pathname)?.[0];
     case "pornhub":
       return (
         url.searchParams.get("viewkey") ||
-        url.pathname.match(/embed\/([^/]+)/)?.[1]
+        /embed\/([^/]+)/.exec(url.pathname)?.[1]
       );
     case "twitter":
-      return url.pathname.match(/status\/([^/]+)/)?.[1];
+      return /status\/([^/]+)/.exec(url.pathname)?.[1];
     case "udemy":
       return url.pathname;
     case "rumble":
@@ -89,15 +89,15 @@ export default function getVideoId(service, url) {
 
       return false;
     case "rutube":
-      return url.pathname.match(/(?:video|embed)\/([^/]+)/)?.[1];
+      return /(?:video|embed)\/([^/]+)/.exec(url.pathname)?.[1];
     case "coub":
-      return url.pathname.match(/view\/([^/]+)/)?.[1];
+      return /view\/([^/]+)/.exec(url.pathname)?.[1];
     case "bilibili": {
       const bvid = url.searchParams.get("bvid");
       if (bvid) {
         return bvid;
       } else {
-        let vid = url.pathname.match(/video\/([^/]+)/)?.[1];
+        let vid = /video\/([^/]+)/.exec(url.pathname)?.[1];
         if (vid && url.search && url.searchParams.get("p") !== null) {
           vid += `/?p=${url.searchParams.get("p")}`;
         }
@@ -110,16 +110,16 @@ export default function getVideoId(service, url) {
       }
       return false;
     case "bitchute":
-      return url.pathname.match(/video\/([^/]+)/)?.[1];
+      return /video\/([^/]+)/.exec(url.pathname)?.[1];
     case "coursera":
       // ! LINK SHOULD BE LIKE THIS https://www.coursera.org/learn/learning-how-to-learn/lecture/75EsZ
-      // return url.pathname.match(/lecture\/([^/]+)\/([^/]+)/)?.[1]; // <--- COURSE PREVIEW
-      return url.pathname.match(/learn\/([^/]+)\/lecture\/([^/]+)/)?.[0]; // <--- COURSE PASSING (IF YOU LOGINED TO COURSERA)
+      // return /lecture\/([^/]+)\/([^/]+)/.exec(url.pathname)?.[1]; // <--- COURSE PREVIEW
+      return /learn\/([^/]+)\/lecture\/([^/]+)/.exec(url.pathname)?.[0]; // <--- COURSE PASSING (IF YOU LOGINED TO COURSERA)
     case "eporner":
       // ! LINK SHOULD BE LIKE THIS eporner.com/video-XXXXXXXXX/isdfsd-dfjsdfjsdf-dsfsdf-dsfsda-dsad-ddsd
-      return url.pathname.match(/video-([^/]+)\/([^/]+)/)?.[0];
+      return /video-([^/]+)\/([^/]+)/.exec(url.pathname)?.[0];
     case "peertube":
-      return url.pathname.match(/\/w\/([^/]+)/)?.[0];
+      return /\/w\/([^/]+)/.exec(url.pathname)?.[0];
     case "dailymotion": {
       return url.pathname;
     }
@@ -133,7 +133,7 @@ export default function getVideoId(service, url) {
         return false;
       }
 
-      const path = url.pathname.match(/([^/]+)\/([\d]+)/)?.[0];
+      const path = /([^/]+)\/([\d]+)/.exec(url.pathname)?.[0];
       if (!path) {
         return false;
       }
@@ -141,9 +141,9 @@ export default function getVideoId(service, url) {
       return `${path}?vid=${vid}`;
     }
     case "yandexdisk":
-      return url.pathname.match(/\/i\/([^/]+)/)?.[1];
+      return /\/i\/([^/]+)/.exec(url.pathname)?.[1];
     case "coursehunter": {
-      const videoId = url.pathname.match(/\/course\/([^/]+)/)?.[1];
+      const videoId = /\/course\/([^/]+)/.exec(url.pathname)?.[1];
       if (!videoId) {
         return [false, 0];
       }
@@ -151,10 +151,10 @@ export default function getVideoId(service, url) {
       return [videoId, Number(url.searchParams.get("lesson") ?? 1)];
     }
     case "ok.ru": {
-      return url.pathname.match(/\/video\/(\d+)/)?.[0];
+      return /\/video\/(\d+)/.exec(url.pathname)?.[0];
     }
     case "googledrive":
-      return url.pathname.match(/\/file\/d\/([^/]+)/)?.[1];
+      return /\/file\/d\/([^/]+)/.exec(url.pathname)?.[1];
     default:
       return false;
   }
