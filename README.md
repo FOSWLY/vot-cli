@@ -68,6 +68,7 @@ npm link
    | Windows | PowerShell | Dragoy | [Ссылка](https://github.com/FOSWLY/vot-cli/tree/main/scripts)
    | Unix | Fish | Musickiller | [Ссылка](https://gitlab.com/musickiller/fishy-voice-over/)
    | Linux | Bash | s-n-alexeyev | [Ссылка](https://github.com/s-n-alexeyev/yvt)
+   | Cloud | Google Colab | alex2844 | [Ссылка](https://github.com/alex2844/youtube-translate)
 
 ## ❗ Примечание
 
