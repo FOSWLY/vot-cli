@@ -141,7 +141,7 @@ export default function getVideoId(service, url) {
       return `${path}?vid=${vid}`;
     }
     case "yandexdisk":
-      return /\/i\/([^/]+)/.exec(url.pathname)?.[1];
+      return /\/[d|i]\/([^/]+)/.exec(url.pathname)?.[1];
     case "coursehunter": {
       const videoId = /\/course\/([^/]+)/.exec(url.pathname)?.[1];
       if (!videoId) {
