@@ -1,0 +1,56 @@
+name: Build
+
+on: [push, pull_request]
+
+permissions:
+  contents: write
+
+jobs:
+  node:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [21.7]
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }} 🛎️
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install packages 🔧
+        shell: bash
+        run: npm install
+
+      - name: Build 🚧
+        run: npm run build
+
+      - name: Upload Artifact 🚀
+        uses: actions/upload-artifact@v4
+        with:
+          name: vot-cli
+          path: dist/*
+  bun:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install packages 🔧
+        run: bun install
+
+      - name: Build 🚧
+        run: bun build:bun
+
+      - name: Upload Artifact 🚀
+        uses: actions/upload-artifact@v4
+        with:
+          name: vot-cli
+          path: dist/*

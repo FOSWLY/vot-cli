@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    // Enable latest features
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "allowJs": false,
+
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
+    "allowSyntheticDefaultImports": true,
+    // "verbatimModuleSyntax": true,
+    "declaration": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
+
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Some stricter flags (disabled by default)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+
+    "rootDir": "src",
+    "outDir": "./dist",
+    "removeComments": true
+  },
+  "exclude": [
+    "./dist",
+    "./scripts/*",
+    "./crossCompile.ts",
+    "./build.ts",
+    "node_modules"
+  ]
+}

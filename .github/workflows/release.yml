@@ -1,0 +1,35 @@
+# adopted from https://github.com/MihailRis/VoxelEngine-Cpp
+name: Release
+
+on:
+  push:
+    branches: [master, dev]
+
+permissions:
+  contents: write
+
+jobs:
+  compile_release:
+    name: Compile Release
+    uses: ./.github/workflows/compile.yml
+
+  create_release:
+    needs: compile_release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: vot-cli
+          name: vot-cli-compiled
+          merge-multiple: true
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref }}
+          name: ${{ github.sha }}
+          draft: true
+          prerelease: false
+          files: |
+            vot-cli/vot-*
