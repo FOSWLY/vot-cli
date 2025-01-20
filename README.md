@@ -72,13 +72,13 @@
 Установка для Bun:
 
 ```bash
-bun install -g vot.js
+bun install -g vot-cli
 ```
 
 Установка для Node:
 
 ```bash
-npm install -g vot.js
+npm install -g vot-cli
 ```
 
 ## Сборка для NPM
