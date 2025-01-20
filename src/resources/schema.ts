@@ -50,7 +50,7 @@ export const schemaObj: SchemaItem[] = [
   {
     // vot-host string
     type: "string",
-    default: config.defaultVotHost,
+    default: config.defaultVOTHost,
     aliases: "vot-host",
   },
   {

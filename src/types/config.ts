@@ -6,5 +6,5 @@ export type ConfigSchema = {
   defaultLang: RequestLang;
   defaultResLang: ResponseLang;
   defaultSubsFormat: SubtitleFormat;
-  defaultVotHost: string;
+  defaultVOTHost: string;
 };

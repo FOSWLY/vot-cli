@@ -35,5 +35,5 @@ async function rewriteConfig(data: typeof config) {
 }
 
 config.version = version;
-config.defaultVotHost = VOTConfig.hostVOT;
+config.defaultVOTHost = VOTConfig.hostVOT;
 await rewriteConfig(config);
