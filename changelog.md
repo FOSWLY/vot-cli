@@ -9,6 +9,39 @@ VOT CLI был полностью переписан с нуля с исполь
 
 - Теперь, скрипт по умолчанию загружает аудио, если передана ссылка на видео. Для того, чтобы вернуть полученную ссылку на аудио дорожку перевода, без загрузки аудио, был добавлен аргумент `preview`
 - Значительно расширен список поддерживаемых веб-сайтов, а так же увеличена дальнейшая скорость выхода обновлений, благодаря переходу на библиотеку [vot.js](https://github.com/FOSWLY/vot.js)
+  - Больше доступных доменов Invidious и Piped
+  - PokeTube
+  - RickTube
+  - Новый домен VK Video
+  - Apple Developers
+  - Archive
+  - Banned Video
+  - Улучшена поддержка Bilibili
+  - Bitview
+  - Cloudflare Stream
+  - Coursetrain
+  - Dailymotion
+  - Dzen
+  - EggHead
+  - EpicGames
+  - Incestflix
+  - Kick
+  - Kodik
+  - Linkedin Learning
+  - Loom
+  - MailRu
+  - NewGrounds
+  - Odysee
+  - Patreon
+  - Reddit
+  - RT News
+  - Sap
+  - WatchPornTo
+  - Weverse
+  - Поддержка /d/ для Yandex Disk
+  - Поддержка x.com для Twitter
+  - Youku
+- Актуализирована схема Protobuf
 - Добавлена возможность сборки скрипта в виде исполняемых файлов для Windows, Linux или MacOS
 - Добавлен аргумент `no-visual` для вывода только в stdout/stderr без информации о прогрессе (#39)
 - Добавлен аргумент `old-model` для получения перевода с использованием старой версии голосов. По умолчанию используется "новая модель" яндекса, которая генерирует немного другие голоса для некоторых видео (#41)
