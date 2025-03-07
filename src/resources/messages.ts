@@ -6,7 +6,6 @@ import {
 } from "@vot.js/shared/consts";
 
 import config from "../config";
-import { isBun } from "../utils/utils";
 
 const setHeader = (text: string) => bold(underline(text));
 
@@ -48,7 +47,7 @@ function sendHelpMessage() {
 }
 
 function sendCLIVersion() {
-  return console.log(`vot-cli ${config.version} (${isBun ? "bun" : "node"})`);
+  return console.log(`vot-cli ${config.version} (${navigator.userAgent})`);
 }
 
 export { sendCLIVersion, sendHelpMessage };
