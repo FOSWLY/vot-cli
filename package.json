@@ -37,9 +37,9 @@
   },
   "homepage": "https://github.com/FOSWLY/vot-cli/#readme",
   "dependencies": {
-    "@vot.js/core": "^2.3.4",
-    "@vot.js/node": "^2.3.4",
-    "@vot.js/shared": "^2.3.4",
+    "@vot.js/core": "^2.3.5",
+    "@vot.js/node": "^2.3.5",
+    "@vot.js/shared": "^2.3.5",
     "listr2": "^8.2.5",
     "minimist": "^1.2.8",
     "yoctocolors": "^2.1.1"
