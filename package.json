@@ -37,25 +37,23 @@
   },
   "homepage": "https://github.com/FOSWLY/vot-cli/#readme",
   "dependencies": {
-    "@vot.js/core": "^2.2.0",
-    "@vot.js/node": "^2.2.0",
-    "@vot.js/shared": "^2.2.0",
+    "@vot.js/core": "^2.3.4",
+    "@vot.js/node": "^2.3.4",
+    "@vot.js/shared": "^2.3.4",
     "listr2": "^8.2.5",
     "minimist": "^1.2.8",
     "yoctocolors": "^2.1.1"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.0",
-    "@types/eslint__js": "^8.42.3",
-    "eslint": "^9.19.0",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-oxlint": "^0.15.8",
-    "eslint-plugin-prettier": "^5.2.3",
+    "@eslint/js": "^9.21.0",
+    "@types/bun": "^1.2.4",
+    "eslint": "^9.21.0",
+    "eslint-plugin-oxlint": "^0.15.13",
     "husky": "^9.1.7",
-    "oxlint": "^0.15.8",
-    "prettier": "^3.4.2",
+    "oxlint": "^0.15.13",
+    "prettier": "^3.5.3",
     "tsc-esm-fix": "^3.1.2",
-    "typescript": "^5.7.3",
-    "typescript-eslint": "^8.21.0"
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.26.0"
   }
 }
