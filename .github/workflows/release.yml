@@ -3,7 +3,7 @@ name: Release
 
 on:
   push:
-    branches: [master, dev]
+    branches: [master, 2.0.0]
 
 permissions:
   contents: write
