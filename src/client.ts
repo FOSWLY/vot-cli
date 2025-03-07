@@ -10,10 +10,12 @@ VOTConfig.loggerLevel = LoggerLevel.SILENCE;
 
 import VOTClient, { VOTWorkerClient } from "@vot.js/node";
 import { VideoData, VOTOpts } from "@vot.js/core/types/client";
-import { TranslatedVideoTranslationResponse } from "@vot.js/core/types/yandex";
+import {
+  SubtitleItem,
+  TranslatedVideoTranslationResponse,
+} from "@vot.js/core/types/yandex";
 import { getVideoData } from "@vot.js/node/utils/videoData";
 import { VOTAgent, VOTProxyAgent } from "@vot.js/node/utils/fetchAgent";
-import { SubtitlesObject } from "@vot.js/shared/protos";
 import { SubtitleFormat, SubtitlesData } from "@vot.js/shared/types/subs";
 import { RequestLang, ResponseLang } from "@vot.js/shared/types/data";
 import { convertSubs } from "@vot.js/shared/utils/subs";
@@ -24,7 +26,7 @@ import { ArgsInfo } from "./types/args";
 type CtxItem = {
   videoData: VideoData;
   translationResult?: TranslatedVideoTranslationResponse;
-  subtitles?: SubtitlesObject;
+  subtitles?: SubtitleItem;
 };
 
 type Ctx = Record<string, CtxItem>;
@@ -198,7 +200,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
   const outDir =
     outDirName && path.isAbsolute(outDirName)
       ? path.join(outDirName)
-      : path.join(__dirname);
+      : path.join(".");
   const fetchOpts: Record<string, unknown> = {
     dispatcher: proxy ? new VOTProxyAgent(proxy) : new VOTAgent(),
   };
