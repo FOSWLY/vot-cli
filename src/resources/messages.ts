@@ -14,6 +14,9 @@ const setOption = (text: string) => bold(text);
 const setList = (header: string, items: readonly unknown[]) =>
   `${setHeader(header)}:\n  ${items.join(", ")}`;
 
+const RUNTIME_AGENT =
+  typeof navigator !== "undefined" ? navigator.userAgent : "unknown";
+
 const HELP_MESSAGE = `vot-cli is a tool for downloading subtitles or translating videos using vot.js.
 
 ${setHeader("Usage")}:
@@ -47,7 +50,7 @@ function sendHelpMessage() {
 }
 
 function sendCLIVersion() {
-  return console.log(`vot-cli ${config.version} (${navigator.userAgent})`);
+  return console.log(`vot-cli ${config.version} (${RUNTIME_AGENT})`);
 }
 
 export { sendCLIVersion, sendHelpMessage };
