@@ -69,6 +69,7 @@ npm link
    | Unix | Fish | Musickiller | [Ссылка](https://gitlab.com/musickiller/fishy-voice-over/)
    | Linux | Bash | s-n-alexeyev | [Ссылка](https://github.com/s-n-alexeyev/yvt)
    | Cloud | Google Colab | alex2844 | [Ссылка](https://github.com/alex2844/youtube-translate)
+3. Скрипт для скачивания видео со встроенными субтитрами (надстройка над vot-cli): [Cсылка](./scripts/)
 
 ## ❗ Примечание
 
