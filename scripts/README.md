@@ -1,4 +1,9 @@
-## Powershell by Dragoy
+# Кастомные скрипты
+
+1. Translate (Powershell by Dragoy) — Скачивает видео, перевод и смешивает
+2. Translate_subs — Скачивает видео, субтитры и смешивает
+
+## Translate (Powershell by Dragoy)
 
 ### 🔱 Зависимости
 
