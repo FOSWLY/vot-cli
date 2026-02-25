@@ -358,6 +358,7 @@ async function main() {
                     `${OUTPUT_DIR}/${filename}`,
                     subtask,
                     `(ID: ${videoId} as ${filename})`,
+                    proxyData,
                   )
                     .then(() => {
                       subtask.title = `Download ${taskSubTitle} completed!`;
@@ -411,6 +412,7 @@ async function main() {
                     `${OUTPUT_DIR}/${filename}`,
                     subtask,
                     `(ID: ${videoId} as ${filename})`,
+                    proxyData,
                   )
                     .then(() => {
                       subtask.title = `Download ${taskSubTitle} completed!`;

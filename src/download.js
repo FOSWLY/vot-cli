@@ -7,7 +7,7 @@ function calcPercents(current, max) {
   return ((current / max) * 100).toFixed(1);
 }
 
-export default async function downloadFile(url, outputPath, subtask, videoId) {
+export default async function downloadFile(url, outputPath, subtask, videoId, proxyData) {
   if (!url) {
     throw new Error("Invalid download link");
   }
@@ -17,6 +17,7 @@ export default async function downloadFile(url, outputPath, subtask, videoId) {
     method: "get",
     url: url,
     responseType: "stream",
+    proxy: proxyData || false,
   });
 
   const totalLength = headers["content-length"];
