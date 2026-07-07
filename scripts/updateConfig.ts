@@ -1,4 +1,5 @@
 import path from "node:path";
+import * as prettier from "prettier";
 import VOTConfig from "@vot.js/shared/config";
 
 import { version, name } from "../package.json";
@@ -11,25 +12,18 @@ const CONFIG_ABS_PATH = path.join(__dirname, "..", CONFIG_PATH);
 const scriptPath = path.relative(rootPath, import.meta.filename);
 
 async function rewriteConfig(data: typeof config) {
-  await Bun.write(
-    CONFIG_ABS_PATH,
-    `// This file is auto-generated.
+  const rawCode = `// This file is auto-generated.
     // All comments are deleted when building ${name}.
     // Write comments in ${scriptPath}
     import { ConfigSchema } from "./types/config";
 
-    export default ${JSON.stringify(data, null, 2)} as ConfigSchema`,
-  );
+    export default ${JSON.stringify(data, null, 2)} as ConfigSchema`;
 
-  // prettify updated config
-  const proc = Bun.spawn([
-    "bunx",
-    "pretty-quick",
-    "--pattern",
-    `".${CONFIG_PATH}"`,
-  ]);
-  await new Response(proc.stdout).text();
-  proc.kill();
+  const code = await prettier.format(rawCode, {
+    filepath: CONFIG_ABS_PATH,
+  });
+
+  await Bun.write(CONFIG_ABS_PATH, code);
 
   console.info("✅ Successfully rewrited config");
 }
