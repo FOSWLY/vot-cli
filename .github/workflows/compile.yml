@@ -32,14 +32,25 @@ jobs:
       - name: Archive compiled files 📦
         shell: bash
         run: |
-          for file in *; do if [[ "$file" != *.exe && "$file" != *.zip && "$file" != *.tar.gz ]]; then tar -czvf "${file}.tar.gz" "$file"; fi; done
-          for file in *; do if [[ "$file" == *.exe ]]; then zip "${file}.zip" "$file"; fi; done
+          for file in build/*; do
+            if [[ -f "$file" && "$file" != *.exe && "$file" != *.zip && "$file" != *.tar.gz ]]; then
+              tar -czvf "${file}.tar.gz" -C build "$(basename "$file")"
+            fi
+          done
+
+          for file in build/*.exe; do
+            if [[ -f "$file" ]]; then
+              zip -j "${file}.zip" "$file"
+            fi
+          done
 
       - name: Upload Artifact 🚀
         uses: actions/upload-artifact@v7
         with:
           name: vot-cli-compiled
-          path: build/vot-*.(zip|tar.gz)
+          path: |
+            build/vot-*.tar.gz
+            build/vot-*.zip
 
   build_packages:
     needs: compile
