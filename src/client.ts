@@ -18,6 +18,7 @@ import { VOTAgent, VOTProxyAgent } from "@vot.js/node/utils/fetchAgent";
 import type { SubtitleFormat, SubtitlesData } from "@vot.js/shared/types/subs";
 import type { RequestLang, ResponseLang } from "@vot.js/shared/types/data";
 import { convertSubs } from "@vot.js/shared/utils/subs";
+import YTDlpWrap from "yt-dlp-wrap-plus";
 
 import phrases from "./resources/phrases";
 import type { ArgsInfo } from "./types/args";
@@ -31,6 +32,29 @@ type CtxItem = {
 };
 
 type Ctx = Record<string, CtxItem>;
+
+const ytdlp = new YTDlpWrap();
+let ytDlpSupportedPromise: Promise<boolean> | undefined;
+
+function isYtDlpSupported() {
+  ytDlpSupportedPromise ??= ytdlp
+    .getVersion()
+    .then(() => true)
+    .catch(() => false);
+
+  return ytDlpSupportedPromise;
+}
+
+async function getVideoTitle(url: string, fallback: string) {
+  try {
+    const info = (await ytdlp.getVideoInfo(url)) as { title?: unknown };
+    const title = typeof info.title === "string" ? info.title.trim() : "";
+
+    return title || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 async function translateVideoImpl(
   task: ListrTask,
@@ -187,6 +211,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
     ["vot-host"]: votHost,
     ["lively-voice"]: useLivelyVoice,
     ["no-visual"]: noVisual,
+    ["no-title"]: noTitle,
     ["subs-format"]: subtitleFormat,
     ["api-token"]: apiToken,
     outfile,
@@ -204,6 +229,14 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
   const isSubtitles = subs ?? subtitles ?? false;
   const isOutputOnly = noVisual || json;
   const subtitleFormatValue = subtitleFormat ?? "srt";
+  const ytDlpSupported = await isYtDlpSupported();
+  const getFilenameBase = async (positional: string, videoId: string) => {
+    if (outfile || noTitle || !ytDlpSupported) {
+      return outfile ?? videoId;
+    }
+
+    return await getVideoTitle(positional, videoId);
+  };
   const outDirName = out ?? outdir;
   const outDir = path.resolve(outDirName ?? ".");
   const reservedFilenames = new Set<string>();
@@ -314,10 +347,11 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                     return true;
                   }
 
-                  const filename = reserveFilename(
-                    outfile ?? currentCtx.videoData.videoId,
-                    "mp3",
+                  const filenameBase = await getFilenameBase(
+                    positional,
+                    currentCtx.videoData.videoId,
                   );
+                  const filename = reserveFilename(filenameBase, "mp3");
 
                   const outputPath = path.join(outDir, filename);
                   await downloadFile(
@@ -347,8 +381,12 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                     return true;
                   }
 
+                  const filenameBase = await getFilenameBase(
+                    positional,
+                    currentCtx.videoData.videoId,
+                  );
                   const filename = reserveFilename(
-                    outfile ?? currentCtx.videoData.videoId,
+                    filenameBase,
                     subtitleFormatValue,
                   );
 

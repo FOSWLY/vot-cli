@@ -95,6 +95,11 @@ const HELP_OPTIONS = [
     flags: ["--json"],
     description: "Write result to stdout/stderr as JSON without progress info",
   },
+  {
+    flags: ["--no-title"],
+    description:
+      "Use video ID as output filename instead of trying to get title",
+  },
 ];
 
 const HELP_OPTIONS_MESSAGE = HELP_OPTIONS.map((option) => {

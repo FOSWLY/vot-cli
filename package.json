@@ -43,7 +43,8 @@
     "lefthook": "^2.1.9",
     "listr2": "^10.2.2",
     "minimist": "^1.2.8",
-    "yoctocolors": "^2.1.2"
+    "yoctocolors": "^2.1.2",
+    "yt-dlp-wrap-plus": "^2.4.3"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",

@@ -85,6 +85,11 @@ export const schemaObj: SchemaItem[] = [
     default: false,
   },
   {
+    type: "boolean",
+    aliases: "no-title",
+    default: false,
+  },
+  {
     // output filename
     type: "string",
     aliases: "outfile",

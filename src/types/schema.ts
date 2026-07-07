@@ -17,6 +17,7 @@ export type Schema = {
   "lively-voice": boolean;
   "no-visual": boolean;
   json: boolean;
+  "no-title": boolean;
   outfile: string;
   out: string;
   outdir: string;
