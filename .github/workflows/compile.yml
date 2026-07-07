@@ -51,18 +51,3 @@ jobs:
           path: |
             build/vot-*.tar.gz
             build/vot-*.zip
-
-  build_packages:
-    needs: compile
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v7
-      - name: Download artifacts
-        uses: actions/download-artifact@v8
-        with:
-          path: vot-cli
-          name: vot-cli-compiled
-          merge-multiple: true
-      # - name:
-      #   u
