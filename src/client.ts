@@ -18,11 +18,15 @@ import { VOTAgent, VOTProxyAgent } from "@vot.js/node/utils/fetchAgent";
 import type { SubtitleFormat, SubtitlesData } from "@vot.js/shared/types/subs";
 import type { RequestLang, ResponseLang } from "@vot.js/shared/types/data";
 import { convertSubs } from "@vot.js/shared/utils/subs";
-import YTDlpWrap from "yt-dlp-wrap-plus";
+import _YTDlpWrap from "yt-dlp-wrap-plus";
 
 import phrases from "./resources/phrases";
 import type { ArgsInfo } from "./types/args";
 import { isLivelyVoiceAllowed, validateFilename } from "./utils/utils";
+
+// workaround to fix `undefined is not a constructor (evaluating 'new YTDlpWrap')` in node build
+const YTDlpWrap = ((_YTDlpWrap as unknown as { default: typeof _YTDlpWrap })
+  .default ?? _YTDlpWrap) as typeof _YTDlpWrap;
 
 type CtxItem = {
   videoData: VideoData;
