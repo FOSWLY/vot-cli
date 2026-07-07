@@ -1,5 +1,38 @@
 # AGENTS.md
 
+## Git
+
+Stage files explicitly by name. Never use `git add .`, `git add -A`, or `git add -u`. When unsure which files to stage, run `git status --short` first.
+
+**Never delete untracked files.** They may contain work-in-progress notes, scratch pads, or local context that is not recoverable from git. Always ask before removing any untracked file.
+
+## Writing style
+
+- Use commas, periods, or parentheses for mid-sentence breaks (not em dashes).
+- Use ASCII quotation marks (`"` and `'`) in code and comments, not Unicode typographic quotes. Some language formatters restore Unicode from the AST, causing staged changes to revert at commit time.
+- Skip marketing fluff: "comprehensive", "robust", "seamless", "cutting-edge".
+- Be direct and concise.
+- These rules apply everywhere: prose, documentation, commit messages, code comments.
+
+## Commit format
+
+Conventional commits, present tense, under 72 characters.
+
+Examples:
+
+```
+feat(auth): add OAuth login support
+```
+
+```
+fix: resolve memory leak in background tasks
+
+Moved timer cleanup into the finally block to prevent accumulation
+during long-running sessions.
+```
+
+Use scopes when they clarify the component. Skip them for broad changes.
+
 ## Project Facts
 
 - Bun is the source-of-truth package manager/runtime here; `bun.lock` is committed and scripts use Bun-only APIs such as `Bun.write` and `bun build --compile`.
