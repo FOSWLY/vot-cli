@@ -14,9 +14,10 @@ export type Schema = {
   "vot-host": string;
   reslang: ResponseLang;
   lang: RequestLang;
-  "old-model": boolean;
+  "lively-voice": boolean;
   "no-visual": boolean;
   outfile: string;
   out: string;
   outdir: string;
+  "api-token": string;
 };

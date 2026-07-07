@@ -71,7 +71,7 @@ export const schemaObj: SchemaItem[] = [
   },
   {
     type: "boolean",
-    aliases: "old-model",
+    aliases: "lively-voice",
     default: false,
   },
   {
@@ -90,6 +90,11 @@ export const schemaObj: SchemaItem[] = [
     short: "o",
     aliases: ["out", "outdir"],
   },
+  {
+    // oauth token
+    type: "string",
+    aliases: "api-token",
+  },
 ];
 
 export const getSchemaOpts = (schemaItem: SchemaItem) => {
@@ -106,9 +111,9 @@ export const schema = schemaObj.reduce((result, item) => {
     return result;
   }
 
-  const schemaItems = item.aliases.reduce(
-    (arr, val) => ({ ...arr, [val]: getSchemaOpts(item) }),
-    {},
-  );
-  return { ...result, ...schemaItems };
+  for (const alias of item.aliases) {
+    result[alias] = getSchemaOpts(item);
+  }
+
+  return result;
 }, {} as SchemaValues);

@@ -1,6 +1,5 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import fsSync from "node:fs";
 
 import { Listr, ListrTask } from "listr2";
 import VOTConfig from "@vot.js/shared/config";
@@ -22,6 +21,7 @@ import { convertSubs } from "@vot.js/shared/utils/subs";
 
 import phrases from "./resources/phrases";
 import { ArgsInfo } from "./types/args";
+import { isLivelyVoiceAllowed, validateFilename } from "./utils/utils";
 
 type CtxItem = {
   videoData: VideoData;
@@ -37,16 +37,20 @@ async function translateVideoImpl(
   videoData: VideoData,
   requestLang: RequestLang,
   responseLang: ResponseLang,
-  useNewModel = true,
+  useLivelyVoice = true,
   timer: ReturnType<typeof setTimeout> | undefined = undefined,
 ): Promise<TranslatedVideoTranslationResponse> {
   clearTimeout(timer);
+  const isLivelyVoice =
+    useLivelyVoice &&
+    isLivelyVoiceAllowed(requestLang, responseLang, client.apiToken);
+
   const res = await client.translateVideo({
     videoData,
     requestLang,
     responseLang,
     extraOpts: {
-      useNewModel,
+      useLivelyVoice: isLivelyVoice,
     },
   });
 
@@ -70,7 +74,7 @@ async function translateVideoImpl(
           videoData,
           requestLang,
           responseLang,
-          useNewModel,
+          useLivelyVoice,
           timer,
         );
         if (res.translated && res.remainingTime < 1) {
@@ -82,17 +86,6 @@ async function translateVideoImpl(
       }
     }, 30_000);
   });
-}
-
-function validateFilename(outdir: string, filename: string, ext = "mp3") {
-  filename = filename.replace(/[\\/:*?"'<>|]/g, "");
-  const file = `${filename}.${ext}`;
-  const exist = fsSync.existsSync(path.join(outdir, file));
-  if (!exist) {
-    return file;
-  }
-
-  return `${filename}_${Date.now()}.${ext}`;
 }
 
 async function downloadFile(
@@ -180,9 +173,10 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
   const {
     ["worker-host"]: workerHost,
     ["vot-host"]: votHost,
-    ["old-model"]: useOldModel,
+    ["lively-voice"]: useLivelyVoice,
     ["no-visual"]: noVisual,
     ["subs-format"]: subtitleFormat,
+    ["api-token"]: apiToken,
     outfile,
     out,
     outdir,
@@ -194,7 +188,6 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
     proxy,
   } = values;
 
-  const useNewModel = !useOldModel;
   const isSubtitles = subs ?? subtitles ?? false;
   const outDirName = out ?? outdir;
   const outDir =
@@ -208,6 +201,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
     host: workerHost,
     hostVOT: votHost,
     fetchOpts,
+    apiToken,
   };
   const client = new (workerHost ? VOTWorkerClient : VOTClient)(clientOpts);
 
@@ -243,14 +237,14 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                     currentCtx.videoData,
                     requestLang as RequestLang,
                     responseLang as ResponseLang,
-                    useNewModel,
+                    useLivelyVoice,
                   );
                 },
               },
               {
                 title: phrases.GettingSubtitles,
                 enabled: isSubtitles,
-                task: async (_) => {
+                task: async () => {
                   const currentCtx = ctx[positional];
 
                   const result = await client.getSubtitles({
