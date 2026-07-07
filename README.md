@@ -30,6 +30,7 @@
 
 [nodejs-link]: https://nodejs.org
 [bun-link]: https://bun.sh/
+[ubuntu-ppa-link]: https://launchpad.net/~toil/+archive/ubuntu/vot-cli
 
 <h1 align="center">
   VOT-CLI
@@ -40,7 +41,7 @@
 
 </h1>
 
-**vot-cli** - это инструмент для загрузки субтитров или перевода видео с помощью [vot.js][votjs-link].
+**vot-cli** - это инструмент для перевода видео или загрузки субтитров с помощью [vot.js][votjs-link].
 
 Данный скрипт позволит вам:
 
@@ -68,7 +69,8 @@
 - **--subs**: получить субтитры вместо аудио, если существуют
 - **--subs-format=(format)**: установить формат для субтитров (`json`, `srt`, `vtt`. Не работает с `--preview`)
 - **--preview**: получить ссылку на загрузку файла, без выполнения загрузки
-- **--old-model**: использовать модель со старыми голосами для всех видео
+- **--lively-voice**: использовать живые голоса для доступных видео (только `en` -> `ru`)
+- **--api-token**: установить Yandex OAuth API токен для использования живых голосов. Токен можно получить через [отладочную ссылку](https://yandex.ru/dev/id/doc/ru/tokens/debug-token)
 - **--no-visual**: выводить результат в stdout/stderr без информации о прогрессе (1 линия = 1 ссылка) (совместимо с `--preview`)
 
 </details>
@@ -88,6 +90,14 @@
 - `vot-cli --outdir="." "https://www.youtube.com/watch?v=X98VPQCE_WI" "https://www.youtube.com/watch?v=djr8j-4fS3A&t=900s"` - пример с реальными данными
 
 </details>
+
+## Установка
+
+### Linux
+
+- Ubuntu: [`ppa:toil/vot-cli`][ubuntu-ppa-link] (для Ubuntu 22.04+)
+
+- Debian / Ubuntu: Загрузите `vot-cli-<arch>.deb` со страницы [Github Releases][gh-releases] и нажмите по файлу дважды (для Ubuntu 20.04+ и Debian 11+).
 
 ## Установка
 
@@ -147,6 +157,28 @@ bun run compile
 ```
 
 Если при сборке, используя ОС Windows, вы получили ошибку `Failed to move cross-compiled bun binary into cache directory`, используйте WSL или перенесите папку с исходным кодом на Диск С
+
+### Deb-файлы
+
+1. После сборки бинарников установите зависимости для сборки deb-файлов:
+
+```bash
+sudo apt install devscripts build-essential debhelper
+```
+
+2. Запустите сборку deb-файлов:
+
+```bash
+./debian/build.sh
+```
+
+или, если хотите сразу опубликовать:
+
+```bash
+./debian/publish.sh
+```
+
+3. После завершения сборки, deb-файлы будут находиться в родительской директории (там, где находится папка `vot-cli`, а не в самой папке `vot-cli`)
 
 #### Локальное тестирование с помощью команды `vot-cli`:
 

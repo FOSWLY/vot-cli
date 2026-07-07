@@ -6,11 +6,11 @@ permissions:
   contents: write
 
 jobs:
-  bun:
+  compile:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -36,7 +36,22 @@ jobs:
           for file in *; do if [[ "$file" == *.exe ]]; then zip "${file}.zip" "$file"; fi; done
 
       - name: Upload Artifact 🚀
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@7
         with:
           name: vot-cli-compiled
           path: build/vot-*.(zip|tar.gz)
+
+  build_packages:
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v7
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: vot-cli
+          name: vot-cli-compiled
+          merge-multiple: true
+      # - name:
+      #   u

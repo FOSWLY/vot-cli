@@ -1,7 +1,16 @@
 .vscode
 
+debian/
+# Build
 build/
 dist/
+
+# Debian (.deb)
+
+*.substvars
+/debian/vot-cli
+/debian/files
+
 *.tmp
 *.mp3
 

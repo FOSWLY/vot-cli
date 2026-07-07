@@ -1,5 +1,4 @@
 import js from "@eslint/js";
-import oxlint from "eslint-plugin-oxlint";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -21,5 +20,4 @@ export default tseslint.config(
       },
     },
   },
-  oxlint.configs["flat/recommended"], // oxlint should be the last one
 );
