@@ -1,38 +1,30 @@
 import { parseArgs } from "node:util";
 
-import { ArgsInfo } from "./types/args";
+import type { ArgsInfo } from "./types/args";
 import { schema } from "./resources/schema";
 
 function getArgs(): ArgsInfo {
-  try {
-    const args: ArgsInfo = parseArgs({
-      options: schema,
-      strict: true,
-      allowPositionals: true,
-    });
-    // eslint-disable-next-line prefer-const
-    let { values, positionals } = args;
+  const args: ArgsInfo = parseArgs({
+    options: schema,
+    strict: true,
+    allowPositionals: true,
+  });
+  const { positionals } = args;
 
-    values = Object.fromEntries(
-      Object.entries(values).map(([key, val]) => {
-        if (schema[key].validator) {
-          return [key, schema[key].validator(val)];
-        }
+  const values = Object.fromEntries(
+    Object.entries(args.values).map(([key, val]) => {
+      if (schema[key].validator) {
+        return [key, schema[key].validator(val)];
+      }
 
-        return [key, val];
-      }),
-    );
+      return [key, val];
+    }),
+  );
 
-    return {
-      values,
-      positionals: Array.from(new Set(positionals)),
-    };
-  } catch {
-    return {
-      values: {},
-      positionals: [],
-    };
-  }
+  return {
+    values,
+    positionals: Array.from(new Set(positionals)),
+  };
 }
 
 export { getArgs };

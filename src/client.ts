@@ -8,19 +8,19 @@ import { LoggerLevel } from "@vot.js/shared/types/logger";
 VOTConfig.loggerLevel = LoggerLevel.SILENCE;
 
 import VOTClient, { VOTWorkerClient } from "@vot.js/node";
-import { VideoData, VOTOpts } from "@vot.js/core/types/client";
-import {
+import type { VideoData, VOTOpts } from "@vot.js/core/types/client";
+import type {
   SubtitleItem,
   TranslatedVideoTranslationResponse,
 } from "@vot.js/core/types/yandex";
 import { getVideoData } from "@vot.js/node/utils/videoData";
 import { VOTAgent, VOTProxyAgent } from "@vot.js/node/utils/fetchAgent";
-import { SubtitleFormat, SubtitlesData } from "@vot.js/shared/types/subs";
-import { RequestLang, ResponseLang } from "@vot.js/shared/types/data";
+import type { SubtitleFormat, SubtitlesData } from "@vot.js/shared/types/subs";
+import type { RequestLang, ResponseLang } from "@vot.js/shared/types/data";
 import { convertSubs } from "@vot.js/shared/utils/subs";
 
 import phrases from "./resources/phrases";
-import { ArgsInfo } from "./types/args";
+import type { ArgsInfo } from "./types/args";
 import { isLivelyVoiceAllowed, validateFilename } from "./utils/utils";
 
 type CtxItem = {
@@ -45,7 +45,7 @@ async function translateVideoImpl(
     useLivelyVoice &&
     isLivelyVoiceAllowed(requestLang, responseLang, client.apiToken);
 
-  const res = await client.translateVideo({
+  const result = await client.translateVideo({
     videoData,
     requestLang,
     responseLang,
@@ -54,21 +54,21 @@ async function translateVideoImpl(
     },
   });
 
-  if (res.translated && res.remainingTime < 1) {
+  if (result.translated && result.remainingTime < 1) {
     task.title = phrases.VideoSuccessfullyTranslated;
-    return res;
+    return result;
   }
 
   task.title = phrases.WaitingTranslationWithSecs.replace(
     "{0}",
-    String(res.remainingTime),
+    String(result.remainingTime),
   );
 
   return new Promise((resolve, reject) => {
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     timer = setTimeout(async () => {
       try {
-        const res = await translateVideoImpl(
+        const translationResult = await translateVideoImpl(
           task,
           client,
           videoData,
@@ -77,9 +77,12 @@ async function translateVideoImpl(
           useLivelyVoice,
           timer,
         );
-        if (res.translated && res.remainingTime < 1) {
+        if (
+          translationResult.translated &&
+          translationResult.remainingTime < 1
+        ) {
           task.title = phrases.VideoSuccessfullyTranslated;
-          resolve(res);
+          resolve(translationResult);
         }
       } catch (err) {
         reject(err as Error);
@@ -110,24 +113,31 @@ async function downloadFile(
       throw new Error("Body is null");
     }
 
-    const contentLength = parseInt(res.headers.get("Content-Length") ?? "0");
+    const contentLength = Number(res.headers.get("Content-Length"));
+    const hasContentLength =
+      Number.isFinite(contentLength) && contentLength > 0;
     let receivedLength = 0;
     const chunks = [];
 
     for await (const value of readable) {
       chunks.push(value);
       receivedLength += value.length;
-      const percent = ((receivedLength / contentLength) * 100).toFixed(2);
-      task.title = phrases.DownloadingWithPercent.replace("{0}", percent);
+      task.title = hasContentLength
+        ? phrases.DownloadingWithPercent.replace(
+            "{0}",
+            ((receivedLength / contentLength) * 100).toFixed(2),
+          )
+        : phrases.DownloadingWithBytes.replace("{0}", String(receivedLength));
     }
 
-    await fs.writeFile(outputPath, chunks);
+    await fs.writeFile(outputPath, chunks, { flag: "wx" });
 
     const filename = outputPath.split(/\\|\//).pop()!;
     task.title = phrases.SuccessDownloadFile.replace("{0}", filename);
   } catch (err) {
     throw new Error(
       `Failed to download audio, because ${(err as Error).message}`,
+      { cause: err },
     );
   }
 }
@@ -158,13 +168,14 @@ async function downloadSubtitle(
       ) as string;
     }
 
-    await fs.writeFile(outputPath, data);
+    await fs.writeFile(outputPath, data, { flag: "wx" });
 
     const filename = outputPath.split(/\\|\//).pop()!;
     task.title = phrases.SuccessDownloadFile.replace("{0}", filename);
   } catch (err) {
     throw new Error(
       `Failed to download subtitle, because ${(err as Error).message}`,
+      { cause: err },
     );
   }
 }
@@ -189,11 +200,28 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
   } = values;
 
   const isSubtitles = subs ?? subtitles ?? false;
+  const subtitleFormatValue = subtitleFormat ?? "srt";
   const outDirName = out ?? outdir;
-  const outDir =
-    outDirName && path.isAbsolute(outDirName)
-      ? path.join(outDirName)
-      : path.join(".");
+  const outDir = path.resolve(outDirName ?? ".");
+  const reservedFilenames = new Set<string>();
+  const reserveFilename = (filename: string, ext: string) => {
+    let safeFilename = validateFilename(outDir, filename, ext);
+    while (reservedFilenames.has(safeFilename)) {
+      safeFilename = validateFilename(
+        outDir,
+        `${filename}_${reservedFilenames.size + 1}`,
+        ext,
+      );
+    }
+
+    reservedFilenames.add(safeFilename);
+    return safeFilename;
+  };
+
+  if (outfile && !preview && positionals.length > 1) {
+    throw new Error("--outfile can only be used with a single URL");
+  }
+
   const fetchOpts: Record<string, unknown> = {
     dispatcher: proxy ? new VOTProxyAgent(proxy) : new VOTAgent(),
   };
@@ -209,8 +237,8 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
     positionals.map((positional) => {
       return {
         title: phrases.PerformingVariousTasksURL.replace("{0}", positional),
-        task: (ctx, task) =>
-          task.newListr(
+        task: (ctx, parentTask) =>
+          parentTask.newListr(
             (parent) => [
               {
                 title: phrases.GettingVideoData,
@@ -228,11 +256,11 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
               {
                 title: phrases.TranslatingVideo,
                 enabled: !isSubtitles,
-                task: async (_, task) => {
+                task: async (_, subtask) => {
                   const currentCtx = ctx[positional];
 
                   currentCtx.translationResult = await translateVideoImpl(
-                    task as unknown as ListrTask,
+                    subtask as unknown as ListrTask,
                     client,
                     currentCtx.videoData,
                     requestLang as RequestLang,
@@ -255,20 +283,20 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                     throw new Error("No subtitles");
                   }
 
-                  const subtitles = result.subtitles.find(
+                  const selectedSubtitles = result.subtitles.find(
                     (sub) => sub.translatedLanguage === responseLang,
                   );
-                  if (!subtitles) {
+                  if (!selectedSubtitles) {
                     throw new Error("No subtitles with response language");
                   }
 
-                  currentCtx.subtitles = subtitles;
+                  currentCtx.subtitles = selectedSubtitles;
                 },
               },
               {
                 title: phrases.AfterProcessActions,
                 enabled: !isSubtitles,
-                task: async (_, task) => {
+                task: async (_, subtask) => {
                   const currentCtx = ctx[positional];
                   if (noVisual && preview) {
                     return;
@@ -279,12 +307,11 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                       "{0}",
                       currentCtx.videoData.videoId,
                     ).replace("{1}", currentCtx.translationResult!.url);
-                    process.stdout.write(phrase);
+                    process.stdout.write(`${phrase}\n`);
                     return true;
                   }
 
-                  const filename = validateFilename(
-                    outDir,
+                  const filename = reserveFilename(
                     outfile ?? currentCtx.videoData.videoId,
                     "mp3",
                   );
@@ -292,7 +319,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                   const outputPath = path.join(outDir, filename);
                   await downloadFile(
                     currentCtx.translationResult!.url,
-                    task as unknown as ListrTask,
+                    subtask as unknown as ListrTask,
                     outputPath,
                     fetchOpts,
                   );
@@ -301,7 +328,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
               {
                 title: phrases.AfterProcessActions,
                 enabled: isSubtitles,
-                task: async (_, task) => {
+                task: async (_, subtask) => {
                   const currentCtx = ctx[positional];
                   if (noVisual && preview) {
                     return;
@@ -312,22 +339,21 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                       "{0}",
                       currentCtx.videoData.videoId,
                     ).replace("{1}", currentCtx.subtitles!.translatedUrl);
-                    process.stdout.write(phrase);
+                    process.stdout.write(`${phrase}\n`);
                     return true;
                   }
 
-                  const filename = validateFilename(
-                    outDir,
+                  const filename = reserveFilename(
                     outfile ?? currentCtx.videoData.videoId,
-                    subtitleFormat,
+                    subtitleFormatValue,
                   );
 
                   const outputPath = path.join(outDir, filename);
                   await downloadSubtitle(
                     currentCtx.subtitles!.translatedUrl,
-                    task as unknown as ListrTask,
+                    subtask as unknown as ListrTask,
                     outputPath,
-                    subtitleFormat,
+                    subtitleFormatValue,
                     fetchOpts,
                   );
                 },
@@ -365,21 +391,29 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
     return;
   }
 
-  let isFailed = true;
-  const result = Object.values(tasks.ctx)
-    .map((context) => {
-      if (Object.hasOwn(context, "translationResult")) {
-        isFailed = false;
+  let hasSuccess = false;
+  let hasFailed = false;
+  const result = positionals
+    .map((positional) => {
+      const context = tasks.ctx[positional];
+      if (context?.translationResult) {
+        hasSuccess = true;
         return context.translationResult!.url;
       }
 
-      if (Object.hasOwn(context, "subtitles")) {
-        isFailed = false;
+      if (context?.subtitles) {
+        hasSuccess = true;
         return context.subtitles!.translatedUrl;
       }
 
+      hasFailed = true;
       return "FAILED";
     })
     .join("\n");
-  process[isFailed ? "stderr" : "stdout"].write(result);
+
+  if (hasFailed) {
+    process.exitCode = 1;
+  }
+
+  process[hasSuccess ? "stdout" : "stderr"].write(`${result}\n`);
 }

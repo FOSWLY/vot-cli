@@ -14,4 +14,5 @@ export default {
   ProccessFinished: "Process finished! (ID: {0})",
   SuccessDownloadFile: "Successfully downloaded file as {0}",
   DownloadingWithPercent: "Downloading {0}%...",
+  DownloadingWithBytes: "Downloading {0} bytes...",
 } as const;

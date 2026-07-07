@@ -1,4 +1,4 @@
-import { Schema } from "./schema";
+import type { Schema } from "./schema";
 
 export type ArgValue = string | boolean | (string | boolean)[] | undefined;
 export type ArgsInfo = {

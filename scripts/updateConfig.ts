@@ -16,7 +16,7 @@ async function rewriteConfig(data: typeof config) {
   const rawCode = `// This file is auto-generated.
     // All comments are deleted when building ${name}.
     // Write comments in ${scriptPath}
-    import { ConfigSchema } from "./types/config";
+    import type { ConfigSchema } from "./types/config";
 
     export default ${JSON.stringify(data, null, 2)} as ConfigSchema`;
 
