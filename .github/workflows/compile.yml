@@ -1,0 +1,53 @@
+name: Cross-Compile
+
+on: [push, pull_request, workflow_call]
+
+permissions:
+  contents: write
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install archive packages 🔧
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install tar zip
+
+      - name: Install packages 🔧
+        run: bun install
+
+      - name: Compile 🚧
+        run: bun compile
+
+      - name: Archive compiled files 📦
+        shell: bash
+        run: |
+          for file in build/*; do
+            if [[ -f "$file" && "$file" != *.exe && "$file" != *.zip && "$file" != *.tar.gz ]]; then
+              tar -czvf "${file}.tar.gz" -C build "$(basename "$file")"
+            fi
+          done
+
+          for file in build/*.exe; do
+            if [[ -f "$file" ]]; then
+              zip -j "${file}.zip" "$file"
+            fi
+          done
+
+      - name: Upload Artifact 🚀
+        uses: actions/upload-artifact@v7
+        with:
+          name: vot-cli-compiled
+          path: |
+            build/vot-*.tar.gz
+            build/vot-*.zip
