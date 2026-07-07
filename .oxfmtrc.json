@@ -5,5 +5,6 @@
   "semi": true,
   "trailingComma": "all",
   "sortPackageJson": true,
-  "ignorePatterns": ["dist", "docs", "debian"]
+  "ignorePatterns": ["dist", "docs", "debian"],
+  "insertFinalNewline": true
 }
