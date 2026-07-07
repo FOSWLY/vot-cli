@@ -1,6 +1,6 @@
 // This file is auto-generated.
 // All comments are deleted when building vot-cli.
-// Write comments in scripts/updateConfig.ts
+// Write comments in scripts\updateConfig.ts
 import { ConfigSchema } from "./types/config";
 
 export default {

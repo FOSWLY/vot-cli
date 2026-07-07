@@ -1,5 +1,6 @@
 import path from "node:path";
-import * as prettier from "prettier";
+import { format } from "oxfmt";
+
 import VOTConfig from "@vot.js/shared/config";
 
 import { version, name } from "../package.json";
@@ -19,11 +20,8 @@ async function rewriteConfig(data: typeof config) {
 
     export default ${JSON.stringify(data, null, 2)} as ConfigSchema`;
 
-  const code = await prettier.format(rawCode, {
-    filepath: CONFIG_ABS_PATH,
-  });
-
-  await Bun.write(CONFIG_ABS_PATH, code);
+  const result = await format(CONFIG_ABS_PATH, rawCode);
+  await Bun.write(CONFIG_ABS_PATH, result.code);
 
   console.info("✅ Successfully rewrited config");
 }

@@ -1,5 +1,5 @@
 import path from "node:path";
-import * as prettier from "prettier";
+import { format } from "oxfmt";
 
 import { schema } from "../src/resources/schema";
 
@@ -18,11 +18,9 @@ export type Schema = {
   ${schemaTypeItems.join("\n  ")}
 }`;
   const schemaPath = path.join(__dirname, "..", "src", "types", "schema.ts");
-  const code = await prettier.format(rawCode, {
-    filepath: schemaPath,
-  });
+  const result = await format(schemaPath, rawCode);
 
-  await Bun.write(schemaPath, code);
+  await Bun.write(schemaPath, result.code);
 }
 
 await generateSchemaType();

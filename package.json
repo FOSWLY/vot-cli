@@ -2,57 +2,57 @@
   "name": "vot-cli",
   "version": "2.0.0",
   "description": "A small script that allows you to download an audio translation from Yandex via the terminal.",
-  "type": "module",
+  "keywords": [
+    "cli",
+    "downloader",
+    "foswly",
+    "voice-over-translation",
+    "vot",
+    "vot-cli"
+  ],
+  "homepage": "https://github.com/FOSWLY/vot-cli/#readme",
+  "bugs": {
+    "url": "https://github.com/FOSWLY/vot-cli/issues",
+    "email": "me@toil.cc"
+  },
+  "license": "MIT",
+  "author": "Toil",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FOSWLY/vot-cli.git"
+  },
   "bin": "./dist/index.js",
+  "type": "module",
   "scripts": {
     "update:config": "bun run scripts/updateConfig.ts",
     "update:schema": "bun run scripts/codeGen.ts",
     "update:all": "bun run update:config && bun run update:schema",
     "compile": "bun run update:all && bun run scripts/crossCompile.ts",
     "build:bun": "bun run build",
-    "build": "bun run update:all && tsc --project tsconfig.build.json --outdir ./dist && tsc-esm-fix --tsconfig tsconfig.build.json",
-    "lint": "bunx oxlint && bunx eslint",
-    "prepare": "bunx husky"
+    "build:raw": "bun run update:all && tsc --project tsconfig.build.json --outdir ./dist && tsc-esm-fix --tsconfig tsconfig.build.json",
+    "build": "bun run update:all && bun run build:raw",
+    "lint": "bunx oxlint",
+    "lint:fix": "bunx oxlint --fix",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/FOSWLY/vot-cli.git"
-  },
-  "keywords": [
-    "cli",
-    "vot",
-    "vot-cli",
-    "voice-over-translation",
-    "downloader",
-    "foswly"
-  ],
-  "author": "Toil",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/FOSWLY/vot-cli/issues",
-    "email": "me@toil.cc"
-  },
-  "engines": {
-    "node": ">=18.3.0"
-  },
-  "homepage": "https://github.com/FOSWLY/vot-cli/#readme",
   "dependencies": {
     "@vot.js/core": "^2.4.7",
     "@vot.js/node": "^2.4.7",
     "@vot.js/shared": "^2.4.7",
+    "lefthook": "^2.1.9",
     "listr2": "^8.3.3",
     "minimist": "^1.2.8",
     "yoctocolors": "^2.1.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.28.0",
     "@types/bun": "^1.2.15",
-    "eslint": "^9.28.0",
-    "husky": "^9.1.7",
-    "oxlint": "^0.17.0",
-    "prettier": "^3.5.3",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.73.0",
     "tsc-esm-fix": "^3.1.2",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.33.0"
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.3.0"
   }
 }

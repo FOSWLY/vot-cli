@@ -1,13 +1,11 @@
 {
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
   "categories": {
     "correctness": "error",
     "perf": "error",
     "suspicious": "warn"
   },
-  "rules": {
-    "no-await-in-loop": "off",
-    "no-unassigned-import": "off"
-  },
+  "rules": {},
   "ignorePatterns": ["dist", "build"],
-  "plugins": ["promise", "import", "eslint", "oxc", "typescript", "unicorn"]
+  "plugins": ["promise", "import", "oxc", "typescript", "unicorn"]
 }
