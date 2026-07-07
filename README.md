@@ -71,7 +71,8 @@
 - **--preview**: получить ссылку на загрузку файла, без выполнения загрузки
 - **--lively-voice**: использовать живые голоса для доступных видео (только `en` -> `ru`)
 - **--api-token**: установить Yandex OAuth API токен для использования живых голосов. Токен можно получить через [отладочную ссылку](https://yandex.ru/dev/id/doc/ru/tokens/debug-token)
-- **--no-visual**: выводить результат в stdout/stderr без информации о прогрессе (1 линия = 1 ссылка) (совместимо с `--preview`)
+- **--no-visual**: выводить результат в stdout/stderr без информации о прогрессе (1 линия = 1 ссылка)
+- **--json**: выводить результат в stdout/stderr в формате JSON без информации о прогрессе
 
 </details>
 
@@ -84,10 +85,115 @@
 - `vot-cli <link>` - получить перевод аудио по ссылке
 - `vot-cli --help` - показать помощь по командам
 - `vot-cli --version` - показать версию утилиты
+- `vot-cli --json [options] <link>` - получить результат в формате JSON
 - `vot-cli --outdir=<path> <link>` - получить перевод аудио по ссылке и сохранить его по указаному пути
 - `vot-cli --outdir=<path> --reslang=en <link>` - получить перевод аудио на английский и сохранить его по указаному пути
 - `vot-cli --subs --outdir=<path> --reslang=en <link>` - получить английские субтитры к видео и сохранить их по указанному пути
 - `vot-cli --outdir="." "https://www.youtube.com/watch?v=X98VPQCE_WI" "https://www.youtube.com/watch?v=djr8j-4fS3A&t=900s"` - пример с реальными данными
+
+</details>
+
+### Примеры JSON-вывода
+
+Для README все примеры были отдельно отформатированы, чтобы их было проще читать. В реальном выводе JSON будет в одну линию, а некоторые списки могут быть длиннее.
+
+<details>
+<summary>Успешное выполнение</summary>
+
+```bash
+vot-cli --json ...
+```
+
+```json
+{
+  "ok": true,
+  "summary": {
+    "total": 1,
+    "success": 1,
+    "failed": 0
+  },
+  "results": [
+    {
+      "input": "https://www.youtube.com/watch?v=X98VPQCE_WI",
+      "status": "success",
+      "type": "audio",
+      "videoId": "X98VPQCE_WI",
+      "url": "https://example.com/audio.mp3",
+      "outputPath": "C:\\downloads\\X98VPQCE_WI.mp3"
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary>Ошибка обработки</summary>
+
+```bash
+vot-cli --json ...
+```
+
+```json
+{
+  "ok": false,
+  "summary": {
+    "total": 1,
+    "success": 0,
+    "failed": 1
+  },
+  "results": [
+    {
+      "input": "not-a-url",
+      "status": "failed",
+      "type": "audio",
+      "videoId": null,
+      "url": null
+    }
+  ]
+}
+```
+
+</details>
+
+<details>
+<summary>Версия</summary>
+
+```bash
+vot-cli --version --json
+```
+
+```json
+{
+  "version": "2.0.0",
+  "runtime": "Bun/1.3.14"
+}
+```
+
+</details>
+
+<details>
+<summary>Помощь</summary>
+
+```bash
+vot-cli --help --json
+```
+
+```json
+{
+  "usage": "vot-cli [options] <link> [link2] [link3] ...",
+  "options": [
+    { "flags": ["-h", "--help"], "description": "Show help (You're here)" },
+    {
+      "flags": ["--json"],
+      "description": "Write result to stdout/stderr as JSON without progress info"
+    }
+  ],
+  "requestLangs": ["auto", "ru", "en"],
+  "responseLangs": ["ru", "en", "kk"],
+  "subtitlesTypes": ["srt", "vtt", "json"]
+}
+```
 
 </details>
 

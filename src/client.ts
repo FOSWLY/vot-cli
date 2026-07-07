@@ -27,6 +27,7 @@ type CtxItem = {
   videoData: VideoData;
   translationResult?: TranslatedVideoTranslationResponse;
   subtitles?: SubtitleItem;
+  outputPath?: string;
 };
 
 type Ctx = Record<string, CtxItem>;
@@ -197,9 +198,11 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
     subtitles,
     preview,
     proxy,
+    json,
   } = values;
 
   const isSubtitles = subs ?? subtitles ?? false;
+  const isOutputOnly = noVisual || json;
   const subtitleFormatValue = subtitleFormat ?? "srt";
   const outDirName = out ?? outdir;
   const outDir = path.resolve(outDirName ?? ".");
@@ -298,7 +301,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                 enabled: !isSubtitles,
                 task: async (_, subtask) => {
                   const currentCtx = ctx[positional];
-                  if (noVisual && preview) {
+                  if (isOutputOnly && preview) {
                     return;
                   }
 
@@ -323,6 +326,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                     outputPath,
                     fetchOpts,
                   );
+                  currentCtx.outputPath = outputPath;
                 },
               },
               {
@@ -330,7 +334,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                 enabled: isSubtitles,
                 task: async (_, subtask) => {
                   const currentCtx = ctx[positional];
-                  if (noVisual && preview) {
+                  if (isOutputOnly && preview) {
                     return;
                   }
 
@@ -356,6 +360,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                     subtitleFormatValue,
                     fetchOpts,
                   );
+                  currentCtx.outputPath = outputPath;
                 },
               },
               {
@@ -382,38 +387,75 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
     {
       concurrent: true,
       exitOnError: false,
-      silentRendererCondition: noVisual,
+      silentRendererCondition: isOutputOnly,
     },
   );
 
   await tasks.run();
-  if (!noVisual) {
+  if (!isOutputOnly) {
     return;
   }
 
   let hasSuccess = false;
   let hasFailed = false;
-  const result = positionals
-    .map((positional) => {
-      const context = tasks.ctx[positional];
-      if (context?.translationResult) {
-        hasSuccess = true;
-        return context.translationResult!.url;
-      }
+  let successCount = 0;
+  let failedCount = 0;
+  const outputType = isSubtitles ? "subtitles" : "audio";
+  const results = positionals.map((positional) => {
+    const context = tasks.ctx[positional];
+    const videoId = context?.videoData.videoId ?? null;
+    if (context?.translationResult) {
+      hasSuccess = true;
+      successCount += 1;
+      return {
+        input: positional,
+        status: "success",
+        type: outputType,
+        videoId,
+        url: context.translationResult.url,
+        ...(context.outputPath ? { outputPath: context.outputPath } : {}),
+      };
+    }
 
-      if (context?.subtitles) {
-        hasSuccess = true;
-        return context.subtitles!.translatedUrl;
-      }
+    if (context?.subtitles) {
+      hasSuccess = true;
+      successCount += 1;
+      return {
+        input: positional,
+        status: "success",
+        type: outputType,
+        videoId,
+        url: context.subtitles.translatedUrl,
+        ...(context.outputPath ? { outputPath: context.outputPath } : {}),
+      };
+    }
 
-      hasFailed = true;
-      return "FAILED";
-    })
-    .join("\n");
+    hasFailed = true;
+    failedCount += 1;
+    return {
+      input: positional,
+      status: "failed",
+      type: outputType,
+      videoId,
+      url: null,
+    };
+  });
 
   if (hasFailed) {
     process.exitCode = 1;
   }
 
-  process[hasSuccess ? "stdout" : "stderr"].write(`${result}\n`);
+  const output = json
+    ? JSON.stringify({
+        ok: !hasFailed,
+        summary: {
+          total: results.length,
+          success: successCount,
+          failed: failedCount,
+        },
+        results,
+      })
+    : results.map((result) => result.url ?? "FAILED").join("\n");
+
+  process[hasSuccess ? "stdout" : "stderr"].write(`${output}\n`);
 }

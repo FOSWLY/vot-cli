@@ -16,6 +16,7 @@ export type Schema = {
   lang: RequestLang;
   "lively-voice": boolean;
   "no-visual": boolean;
+  json: boolean;
   outfile: string;
   out: string;
   outdir: string;

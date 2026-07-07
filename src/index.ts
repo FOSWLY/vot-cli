@@ -26,11 +26,11 @@ async function ensureOutputDir(outDir: string) {
 async function main() {
   const { values, positionals } = getArgs();
   if (values.version) {
-    return sendCLIVersion();
+    return sendCLIVersion(values.json);
   }
 
   if (values.help || positionals.length === 0) {
-    return sendHelpMessage();
+    return sendHelpMessage(values.json);
   }
 
   const outDirName = values.out ?? values.outdir;
