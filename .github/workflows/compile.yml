@@ -36,7 +36,7 @@ jobs:
           for file in *; do if [[ "$file" == *.exe ]]; then zip "${file}.zip" "$file"; fi; done
 
       - name: Upload Artifact 🚀
-        uses: actions/upload-artifact@7
+        uses: actions/upload-artifact@v7
         with:
           name: vot-cli-compiled
           path: build/vot-*.(zip|tar.gz)
