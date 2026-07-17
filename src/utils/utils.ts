@@ -24,8 +24,7 @@ export function isLivelyVoiceAllowed(
   responseLang: ResponseLang,
   apiToken?: string,
 ) {
-  // allowed only en -> ru pair
-  if (requestLang !== "en" || responseLang !== "ru") {
+  if (requestLang === "auto" || responseLang !== "ru") {
     return false;
   }
 
