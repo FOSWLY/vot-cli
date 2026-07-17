@@ -51,7 +51,7 @@
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
     "tsc-esm-fix": "^3.1.2",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "engines": {
     "node": ">=18.3.0"
