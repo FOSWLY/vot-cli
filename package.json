@@ -40,7 +40,7 @@
     "@vot.js/core": "^2.4.20",
     "@vot.js/node": "^2.4.20",
     "@vot.js/shared": "^2.4.20",
-    "listr2": "^10.2.2",
+    "listr2": "^11.0.0",
     "minimist": "^1.2.8",
     "yoctocolors": "^2.1.2",
     "yt-dlp-wrap-plus": "^2.4.3"
