@@ -39,7 +39,7 @@
   "dependencies": {
     "@vot.js/core": "^2.4.20",
     "@vot.js/node": "^2.4.20",
-    "@vot.js/shared": "^2.4.20",
+    "@vot.js/shared": "^3.0.1",
     "listr2": "^10.2.2",
     "minimist": "^1.2.8",
     "yoctocolors": "^2.1.2",
