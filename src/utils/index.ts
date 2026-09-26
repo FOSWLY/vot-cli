@@ -1,6 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
-import { RequestLang, ResponseLang } from "@vot.js/shared/types/data";
+
+import type { RequestLang, ResponseLang } from "@vot.js/shared/types/data";
 
 export function validateFilename(
   outdir: string,

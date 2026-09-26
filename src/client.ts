@@ -25,7 +25,7 @@ import { convertSubs } from "@vot.js/shared/utils/subs";
 
 import phrases from "./resources/phrases";
 import type { ArgsInfo } from "./types/args";
-import { isLivelyVoiceAllowed, validateFilename } from "./utils/utils";
+import { isLivelyVoiceAllowed, validateFilename } from "./utils";
 
 // workaround to fix `undefined is not a constructor (evaluating 'new YTDlpWrap')` in node build
 const YTDlpWrap = ((_YTDlpWrap as unknown as { default: typeof _YTDlpWrap })
