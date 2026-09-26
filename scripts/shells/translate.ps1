@@ -21,7 +21,7 @@ function ProcessVideo($video_link, $original_sound_ratio) {
 
     yt-dlp -o $temp_video $video_link
     $video_full_name = Join-Path (Get-Location) (Get-ChildItem $temp_video_dir).Name
-    vot-cli $video_link --output $temp_audio
+    vot-cli $video_link --outdir $temp_audio
 
     $temp_video_file = (Get-ChildItem -Path $temp_video_dir)[0].FullName
     $temp_audio_file = (Get-ChildItem -Path $temp_audio)[0].FullName
@@ -29,7 +29,7 @@ function ProcessVideo($video_link, $original_sound_ratio) {
     ffmpeg `
         -i $temp_video_file -i $temp_audio_file `
         -c:v copy `
-		-b:a 128k `
+        -b:a 128k `
         -filter_complex " `
             [0:a] volume=$original_sound_ratio [original]; `
             [original][1:a] amix=inputs=2:duration=longest [audio_out] `
@@ -50,7 +50,8 @@ $temp_audio = "$temp_dir/audio"
 if ($args.Length -eq 1) {
     $video_links = $args[0..($args.Length - 1)]
     $volume_ratio_arg = $original_sound_ratio
-} else {
+}
+else {
     # если аргументов >= 2, считаем, что последний аргумент это возможная громкость
     $video_links = $args[0..($args.Length - 2)]
     $volume_ratio_arg = $args[-1]
@@ -61,7 +62,8 @@ if ($args.Length -eq 1) {
 if ($volume_ratio_arg -as [double]) {
     $original_sound_ratio = $volume_ratio_arg
     Write-Host "Original volume is set to $original_sound_ratio"
-} else {
+}
+else {
     # If the last argument is not a number, add it back to the video links array
     $video_links += $volume_ratio_arg
 }
@@ -78,6 +80,7 @@ if ($video_links) {
         Write-Host "Processing video: $video_link"
         ProcessVideo $video_link $original_sound_ratio
     }
-} else {
+}
+else {
     Write-Host "Error: Link not entered."
 }
