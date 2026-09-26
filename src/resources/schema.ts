@@ -48,12 +48,6 @@ export const schemaObj: SchemaItem[] = [
     aliases: "worker-host",
   },
   {
-    // vot-host string
-    type: "string",
-    default: config.defaultVOTHost,
-    aliases: "vot-host",
-  },
-  {
     // response lang
     type: "string",
     default: config.defaultResLang,

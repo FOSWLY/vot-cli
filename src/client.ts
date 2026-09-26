@@ -2,23 +2,26 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { Listr, ListrTask } from "listr2";
+import _YTDlpWrap from "yt-dlp-wrap-plus";
+
 import VOTConfig from "@vot.js/shared/config";
 import { LoggerLevel } from "@vot.js/shared/types/logger";
 
 VOTConfig.loggerLevel = LoggerLevel.SILENCE;
 
-import VOTClient, { VOTWorkerClient } from "@vot.js/node";
-import type { VideoData, VOTOpts } from "@vot.js/core/types/client";
-import type {
-  SubtitleItem,
-  TranslatedVideoTranslationResponse,
-} from "@vot.js/core/types/yandex";
+import VOTClient from "@vot.js/node";
 import { getVideoData } from "@vot.js/node/utils/videoData";
 import { VOTAgent, VOTProxyAgent } from "@vot.js/node/utils/fetchAgent";
+
+import { VOTNextWorkerProvider } from "@vot.js/core/providers/votworker";
+import { YandexProvider } from "@vot.js/core/providers/yandex";
+import type { VideoData } from "@vot.js/core/types/client";
+import type { TranslatedVideoTranslationResponse } from "@vot.js/core/types/providers/yandex";
+import type { GetSubtitleItem } from "@vot.js/core/types/providers/base";
+
 import type { SubtitleFormat, SubtitlesData } from "@vot.js/shared/types/subs";
 import type { RequestLang, ResponseLang } from "@vot.js/shared/types/data";
 import { convertSubs } from "@vot.js/shared/utils/subs";
-import _YTDlpWrap from "yt-dlp-wrap-plus";
 
 import phrases from "./resources/phrases";
 import type { ArgsInfo } from "./types/args";
@@ -31,7 +34,7 @@ const YTDlpWrap = ((_YTDlpWrap as unknown as { default: typeof _YTDlpWrap })
 type CtxItem = {
   videoData: VideoData;
   translationResult?: TranslatedVideoTranslationResponse;
-  subtitles?: SubtitleItem;
+  subtitles?: GetSubtitleItem;
   outputPath?: string;
 };
 
@@ -62,7 +65,7 @@ async function getVideoTitle(url: string, fallback: string) {
 
 async function translateVideoImpl(
   task: ListrTask,
-  client: VOTWorkerClient,
+  client: VOTClient,
   videoData: VideoData,
   requestLang: RequestLang,
   responseLang: ResponseLang,
@@ -72,7 +75,7 @@ async function translateVideoImpl(
   clearTimeout(timer);
   const isLivelyVoice =
     useLivelyVoice &&
-    isLivelyVoiceAllowed(requestLang, responseLang, client.apiToken);
+    isLivelyVoiceAllowed(requestLang, responseLang, client.provider.apiToken);
 
   const result = await client.translateVideo({
     videoData,
@@ -212,7 +215,6 @@ async function downloadSubtitle(
 export async function executeVOT({ values, positionals }: ArgsInfo) {
   const {
     ["worker-host"]: workerHost,
-    ["vot-host"]: votHost,
     ["lively-voice"]: useLivelyVoice,
     ["no-visual"]: noVisual,
     ["no-title"]: noTitle,
@@ -265,13 +267,13 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
   const fetchOpts: Record<string, unknown> = {
     dispatcher: proxy ? new VOTProxyAgent(proxy) : new VOTAgent(),
   };
-  const clientOpts: VOTOpts = {
+  const isWorker = Boolean(workerHost);
+  const client = new VOTClient({
     host: workerHost,
-    hostVOT: votHost,
     fetchOpts,
     apiToken,
-  };
-  const client = new (workerHost ? VOTWorkerClient : VOTClient)(clientOpts);
+    provider: isWorker ? VOTNextWorkerProvider : YandexProvider,
+  });
 
   const tasks: Listr<Ctx> = new Listr<Ctx>(
     positionals.map((positional) => {

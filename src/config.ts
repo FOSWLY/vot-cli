@@ -7,6 +7,5 @@ export default {
   defaultLang: "en",
   defaultResLang: "ru",
   defaultSubsFormat: "srt",
-  defaultVOTHost: "vot.toil.cc/v1",
-  version: "2.0.1",
-} as ConfigSchema;
+  version: "2.1.0",
+} satisfies ConfigSchema;

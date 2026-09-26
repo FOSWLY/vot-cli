@@ -16,7 +16,6 @@
 
 [votjs-link]: https://github.com/FOSWLY/vot.js
 [vot-worker-link]: https://github.com/FOSWLY/vot-worker
-[vot-backend-link]: https://github.com/FOSWLY/vot-backend
 [vot-ext-link]: https://github.com/ilyhalight/voice-over-translation
 
 <!-- vot-cli scripts -->
@@ -32,16 +31,18 @@
 [bun-link]: https://bun.sh/
 [ubuntu-ppa-link]: https://launchpad.net/~toil/+archive/ubuntu/vot-cli
 
-<h1 align="center">
-  VOT-CLI
+<div align="center">
+  <h1>vot-cli</h1>
+
+Инструмент для перевода видео или загрузки субтитров с помощью [vot.js][votjs-link]
 
 [![GitHub Actions][badge-actions]][gh-actions-script]
 [![en][badge-en]][gh-readme-en]
 [![ru][badge-ru]][gh-readme-ru]
 
-</h1>
+</div>
 
-**vot-cli** - это инструмент для перевода видео или загрузки субтитров с помощью [vot.js][votjs-link].
+---
 
 Данный скрипт позволит вам:
 
@@ -68,7 +69,6 @@
 - **--reslang=(lang)**: установить язык звуковой дорожки или субтитров (см. [вики][supported-langs-wiki], чтобы узнать какие языки поддерживаются). По умолчанию: `ru`
 - **--proxy=(url)**: установить HTTP или HTTPS прокси в формате `[<PROTOCOL>://]<USERNAME>:<PASSWORD>@<HOST>[:<port>]`
 - **--worker-host=(url)**: установить свой [vot-worker][vot-worker-link] в формате `[<PROTOCOL>://]<HOST>[:<port>][/<PREFIX>]`
-- **--vot-host=(url)**: установить свой [vot-backend][vot-backend-link] сервер в формате `[<PROTOCOL>://]<HOST>[:<port>][/<PREFIX>]`
 - **--subs**: получить субтитры вместо аудио, если существуют
 - **--subs-format=(format)**: установить формат для субтитров (`json`, `srt`, `vtt`. Не работает с `--preview`)
 - **--preview**: получить ссылку на загрузку файла, без выполнения загрузки
@@ -234,7 +234,7 @@ vot-cli --version
 
 ### С помощью NPM/Bun (Кросс-платформенная)
 
-Этот вариант подходит, если у вас уже установлен [Bun.sh][bun-link] или [Node.js 22+][nodejs-link].
+Этот вариант подходит, если у вас уже установлен [Bun.sh][bun-link] или [Node.js 22.19+][nodejs-link].
 
 1. Установите [Bun.sh][bun-link] или [Node.js][nodejs-link].
 2. Установите `vot-cli` глобально:

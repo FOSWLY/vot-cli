@@ -1,8 +1,6 @@
 import path from "node:path";
 import { format } from "oxfmt";
 
-import VOTConfig from "@vot.js/shared/config";
-
 import { version, name } from "../package.json";
 import config from "../src/config.ts";
 
@@ -18,7 +16,7 @@ async function rewriteConfig(data: typeof config) {
     // Write comments in ${scriptPath}
     import type { ConfigSchema } from "./types/config";
 
-    export default ${JSON.stringify(data, null, 2)} as ConfigSchema`;
+    export default ${JSON.stringify(data, null, 2)} satisfies ConfigSchema`;
 
   const result = await format(CONFIG_ABS_PATH, rawCode);
   await Bun.write(CONFIG_ABS_PATH, result.code);
@@ -27,5 +25,4 @@ async function rewriteConfig(data: typeof config) {
 }
 
 config.version = version;
-config.defaultVOTHost = VOTConfig.hostVOT;
 await rewriteConfig(config);

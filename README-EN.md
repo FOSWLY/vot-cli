@@ -16,7 +16,6 @@
 
 [votjs-link]: https://github.com/FOSWLY/vot.js
 [vot-worker-link]: https://github.com/FOSWLY/vot-worker
-[vot-backend-link]: https://github.com/FOSWLY/vot-backend
 [vot-ext-link]: https://github.com/ilyhalight/voice-over-translation
 
 <!-- vot-cli scripts -->
@@ -32,16 +31,18 @@
 [bun-link]: https://bun.sh/
 [ubuntu-ppa-link]: https://launchpad.net/~toil/+archive/ubuntu/vot-cli
 
-<h1 align="center">
-  VOT-CLI
+<div align="center">
+  <h1>vot-cli</h1>
+
+Tool for translating videos or downloading subtitles using [vot.js][votjs-link]
 
 [![GitHub Actions][badge-actions]][gh-actions-script]
 [![en][badge-en]][gh-readme-en]
 [![ru][badge-ru]][gh-readme-ru]
 
-</h1>
+</div>
 
-**vot-cli** is a tool for translating videos or downloading subtitles using [vot.js][votjs-link].
+---
 
 This script lets you:
 
@@ -68,7 +69,6 @@ This script lets you:
 - **--reslang=(lang)**: set audio track or subtitle language (see [wiki][supported-langs-wiki] for supported languages). Default: `ru`
 - **--proxy=(url)**: set HTTP or HTTPS proxy in format `[<PROTOCOL>://]<USERNAME>:<PASSWORD>@<HOST>[:<port>]`
 - **--worker-host=(url)**: set your own [vot-worker][vot-worker-link] in format `[<PROTOCOL>://]<HOST>[:<port>][/<PREFIX>]`
-- **--vot-host=(url)**: set your own [vot-backend][vot-backend-link] server in format `[<PROTOCOL>://]<HOST>[:<port>][/<PREFIX>]`
 - **--subs**: get subtitles instead of audio, if available
 - **--subs-format=(format)**: set subtitle format (`json`, `srt`, `vtt`. Does not work with `--preview`)
 - **--preview**: get a download link without downloading
@@ -234,7 +234,7 @@ To make it accessible from anywhere, add its folder to the `PATH` environment va
 
 ### Via NPM/Bun (Cross-platform)
 
-This option is suitable if you already have [Bun.sh][bun-link] or [Node.js 22+][nodejs-link] installed.
+This option is suitable if you already have [Bun.sh][bun-link] or [Node.js 22.19+][nodejs-link] installed.
 
 1. Install [Bun.sh][bun-link] or [Node.js][nodejs-link].
 2. Install `vot-cli` globally:

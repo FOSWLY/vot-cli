@@ -59,11 +59,6 @@ const HELP_OPTIONS = [
       "Set vot-worker host ([<PROTOCOL>://]<HOST>[:<port>][/<PREFIX>])",
   },
   {
-    flags: ["--vot-host=(url)"],
-    description:
-      "Set vot-backend host ([<PROTOCOL>://]<HOST>[:<port>][/<PREFIX>])",
-  },
-  {
     flags: ["--subs", "--subtitles"],
     description: "Get subtitles instead of audio if exists",
   },
