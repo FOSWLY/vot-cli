@@ -40,6 +40,36 @@ type CtxItem = {
 
 type Ctx = Record<string, CtxItem>;
 
+function errorMessage(err: unknown) {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function captureTaskErrors(
+  positional: string,
+  tasks: ListrTask<Ctx>[],
+  errors: Map<string, string>,
+) {
+  return tasks.map((task) => ({
+    ...task,
+    task: (ctx: Ctx, wrapper: Parameters<ListrTask<Ctx>["task"]>[1]) => {
+      try {
+        const result = task.task(ctx, wrapper);
+        if (result instanceof Promise) {
+          return result.catch((err) => {
+            errors.set(positional, errorMessage(err));
+            throw err;
+          });
+        }
+
+        return result;
+      } catch (err) {
+        errors.set(positional, errorMessage(err));
+        throw err;
+      }
+    },
+  }));
+}
+
 const ytdlp = new YTDlpWrap();
 let ytDlpSupportedPromise: Promise<boolean> | undefined;
 
@@ -274,149 +304,155 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
     provider: isWorker ? VOTNextWorkerProvider : YandexProvider,
   });
 
+  const errors = new Map<string, string>();
   const tasks: Listr<Ctx> = new Listr<Ctx>(
     positionals.map((positional) => {
       return {
         title: phrases.PerformingVariousTasksURL.replace("{0}", positional),
         task: (ctx, parentTask) =>
           parentTask.newListr(
-            (parent) => [
-              {
-                title: phrases.GettingVideoData,
-                task: async () => {
-                  ctx[positional] = {
-                    videoData: await getVideoData(positional),
-                  };
+            (parent) =>
+              captureTaskErrors(
+                positional,
+                [
+                  {
+                    title: phrases.GettingVideoData,
+                    task: async () => {
+                      ctx[positional] = {
+                        videoData: await getVideoData(positional),
+                      };
 
-                  parent.title = phrases.PerformingVariousTasksURL.replace(
-                    "{0}",
-                    ctx[positional].videoData.videoId,
-                  );
-                },
-              },
-              {
-                title: phrases.TranslatingVideo,
-                enabled: !isSubtitles,
-                task: async (_, subtask) => {
-                  const currentCtx = ctx[positional];
+                      parent.title = phrases.PerformingVariousTasksURL.replace(
+                        "{0}",
+                        ctx[positional].videoData.videoId,
+                      );
+                    },
+                  },
+                  {
+                    title: phrases.TranslatingVideo,
+                    enabled: !isSubtitles,
+                    task: async (_, subtask) => {
+                      const currentCtx = ctx[positional];
 
-                  currentCtx.translationResult = await translateVideoImpl(
-                    subtask as unknown as ListrTask,
-                    client,
-                    currentCtx.videoData,
-                    requestLang as RequestLang,
-                    responseLang as ResponseLang,
-                    useLivelyVoice,
-                  );
-                },
-              },
-              {
-                title: phrases.GettingSubtitles,
-                enabled: isSubtitles,
-                task: async () => {
-                  const currentCtx = ctx[positional];
+                      currentCtx.translationResult = await translateVideoImpl(
+                        subtask as unknown as ListrTask,
+                        client,
+                        currentCtx.videoData,
+                        requestLang as RequestLang,
+                        responseLang as ResponseLang,
+                        useLivelyVoice,
+                      );
+                    },
+                  },
+                  {
+                    title: phrases.GettingSubtitles,
+                    enabled: isSubtitles,
+                    task: async () => {
+                      const currentCtx = ctx[positional];
 
-                  const result = await client.getSubtitles({
-                    videoData: currentCtx.videoData,
-                    requestLang,
-                  });
-                  if (!result.subtitles.length) {
-                    throw new Error("No subtitles");
-                  }
+                      const result = await client.getSubtitles({
+                        videoData: currentCtx.videoData,
+                        requestLang,
+                      });
+                      if (!result.subtitles.length) {
+                        throw new Error("No subtitles");
+                      }
 
-                  const selectedSubtitles = result.subtitles.find(
-                    (sub) => sub.translatedLanguage === responseLang,
-                  );
-                  if (!selectedSubtitles) {
-                    throw new Error("No subtitles with response language");
-                  }
+                      const selectedSubtitles = result.subtitles.find(
+                        (sub) => sub.translatedLanguage === responseLang,
+                      );
+                      if (!selectedSubtitles) {
+                        throw new Error("No subtitles with response language");
+                      }
 
-                  currentCtx.subtitles = selectedSubtitles;
-                },
-              },
-              {
-                title: phrases.AfterProcessActions,
-                enabled: !isSubtitles,
-                task: async (_, subtask) => {
-                  const currentCtx = ctx[positional];
-                  if (isOutputOnly && preview) {
-                    return;
-                  }
+                      currentCtx.subtitles = selectedSubtitles;
+                    },
+                  },
+                  {
+                    title: phrases.AfterProcessActions,
+                    enabled: !isSubtitles,
+                    task: async (_, subtask) => {
+                      const currentCtx = ctx[positional];
+                      if (isOutputOnly && preview) {
+                        return;
+                      }
 
-                  if (preview) {
-                    const phrase = phrases.TranslationLinkOutput.replace(
-                      "{0}",
-                      currentCtx.videoData.videoId,
-                    ).replace("{1}", currentCtx.translationResult!.url);
-                    process.stdout.write(`${phrase}\n`);
-                    return true;
-                  }
+                      if (preview) {
+                        const phrase = phrases.TranslationLinkOutput.replace(
+                          "{0}",
+                          currentCtx.videoData.videoId,
+                        ).replace("{1}", currentCtx.translationResult!.url);
+                        process.stdout.write(`${phrase}\n`);
+                        return true;
+                      }
 
-                  const filenameBase = await getFilenameBase(
-                    positional,
-                    currentCtx.videoData.videoId,
-                  );
-                  const filename = reserveFilename(filenameBase, "mp3");
+                      const filenameBase = await getFilenameBase(
+                        positional,
+                        currentCtx.videoData.videoId,
+                      );
+                      const filename = reserveFilename(filenameBase, "mp3");
 
-                  const outputPath = path.join(outDir, filename);
-                  await downloadFile(
-                    currentCtx.translationResult!.url,
-                    subtask as unknown as ListrTask,
-                    outputPath,
-                    fetchOpts,
-                  );
-                  currentCtx.outputPath = outputPath;
-                },
-              },
-              {
-                title: phrases.AfterProcessActions,
-                enabled: isSubtitles,
-                task: async (_, subtask) => {
-                  const currentCtx = ctx[positional];
-                  if (isOutputOnly && preview) {
-                    return;
-                  }
+                      const outputPath = path.join(outDir, filename);
+                      await downloadFile(
+                        currentCtx.translationResult!.url,
+                        subtask as unknown as ListrTask,
+                        outputPath,
+                        fetchOpts,
+                      );
+                      currentCtx.outputPath = outputPath;
+                    },
+                  },
+                  {
+                    title: phrases.AfterProcessActions,
+                    enabled: isSubtitles,
+                    task: async (_, subtask) => {
+                      const currentCtx = ctx[positional];
+                      if (isOutputOnly && preview) {
+                        return;
+                      }
 
-                  if (preview) {
-                    const phrase = phrases.SubtitlesLinkOutput.replace(
-                      "{0}",
-                      currentCtx.videoData.videoId,
-                    ).replace("{1}", currentCtx.subtitles!.translatedUrl);
-                    process.stdout.write(`${phrase}\n`);
-                    return true;
-                  }
+                      if (preview) {
+                        const phrase = phrases.SubtitlesLinkOutput.replace(
+                          "{0}",
+                          currentCtx.videoData.videoId,
+                        ).replace("{1}", currentCtx.subtitles!.translatedUrl);
+                        process.stdout.write(`${phrase}\n`);
+                        return true;
+                      }
 
-                  const filenameBase = await getFilenameBase(
-                    positional,
-                    currentCtx.videoData.videoId,
-                  );
-                  const filename = reserveFilename(
-                    filenameBase,
-                    subtitleFormatValue,
-                  );
+                      const filenameBase = await getFilenameBase(
+                        positional,
+                        currentCtx.videoData.videoId,
+                      );
+                      const filename = reserveFilename(
+                        filenameBase,
+                        subtitleFormatValue,
+                      );
 
-                  const outputPath = path.join(outDir, filename);
-                  await downloadSubtitle(
-                    currentCtx.subtitles!.translatedUrl,
-                    subtask as unknown as ListrTask,
-                    outputPath,
-                    subtitleFormatValue,
-                    fetchOpts,
-                  );
-                  currentCtx.outputPath = outputPath;
-                },
-              },
-              {
-                title: phrases.Finish,
-                task: () => {
-                  const currentCtx = ctx[positional];
-                  parent.title = phrases.ProccessFinished.replace(
-                    "{0}",
-                    currentCtx.videoData.videoId,
-                  );
-                },
-              },
-            ],
+                      const outputPath = path.join(outDir, filename);
+                      await downloadSubtitle(
+                        currentCtx.subtitles!.translatedUrl,
+                        subtask as unknown as ListrTask,
+                        outputPath,
+                        subtitleFormatValue,
+                        fetchOpts,
+                      );
+                      currentCtx.outputPath = outputPath;
+                    },
+                  },
+                  {
+                    title: phrases.Finish,
+                    task: () => {
+                      const currentCtx = ctx[positional];
+                      parent.title = phrases.ProccessFinished.replace(
+                        "{0}",
+                        currentCtx.videoData.videoId,
+                      );
+                    },
+                  },
+                ],
+                errors,
+              ),
             {
               concurrent: false,
               rendererOptions: {
@@ -437,27 +473,20 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
 
   await tasks.run();
   if (!isOutputOnly) {
-    if (tasks.errors?.length) {
-      process.exitCode = 1;
-    }
-
-    return;
+    return { mode: "visual" as const, failed: Boolean(tasks.errors?.length) };
   }
 
   let hasSuccess = false;
-  let hasFailed = false;
-  let successCount = 0;
-  let failedCount = 0;
   const outputType = isSubtitles ? "subtitles" : "audio";
   const results = positionals.map((positional) => {
     const context = tasks.ctx[positional];
     const videoId = context?.videoData.videoId ?? null;
     if (
+      !errors.has(positional) &&
       (context?.translationResult || context?.subtitles) &&
       (preview || context.outputPath)
     ) {
       hasSuccess = true;
-      successCount += 1;
       const url =
         context.translationResult?.url ?? context.subtitles!.translatedUrl;
       return {
@@ -470,32 +499,20 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
       };
     }
 
-    hasFailed = true;
-    failedCount += 1;
     return {
       input: positional,
       status: "failed",
       type: outputType,
       videoId,
       url: null,
+      error: errors.get(positional) ?? "Unknown error",
     };
   });
 
-  if (hasFailed) {
-    process.exitCode = 1;
-  }
-
-  const output = json
-    ? JSON.stringify({
-        ok: !hasFailed,
-        summary: {
-          total: results.length,
-          success: successCount,
-          failed: failedCount,
-        },
-        results,
-      })
-    : results.map((result) => result.url ?? "FAILED").join("\n");
-
-  process[hasSuccess ? "stdout" : "stderr"].write(`${output}\n`);
+  return {
+    mode: "output" as const,
+    results,
+    hasSuccess,
+    failed: results.some(({ status }) => status === "failed"),
+  };
 }

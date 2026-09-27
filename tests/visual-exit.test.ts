@@ -11,7 +11,9 @@ test("visual mode exits unsuccessfully when a URL task fails", () => {
   ]);
 
   expect(exitCode).toBe(1);
-  expect(
-    new TextDecoder().decode(stdout) + new TextDecoder().decode(stderr),
-  ).toContain("Invalid URL");
+  const output =
+    new TextDecoder().decode(stdout) + new TextDecoder().decode(stderr);
+  expect(output).toContain("Invalid URL");
+  expect(output.match(/Performing various tasks \(url:/g)).toHaveLength(1);
+  expect(output.match(/\[FAILED: Invalid URL\]/g)).toHaveLength(1);
 });

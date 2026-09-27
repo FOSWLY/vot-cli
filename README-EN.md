@@ -100,6 +100,7 @@ This script lets you:
 ### JSON output examples
 
 All examples in this README have been formatted separately for readability. In real output, JSON will be a single line, and some lists may be longer.
+Failed results include an `error` message. Argument and setup failures use `{"ok":false,"error":"..."}`. Successful or mixed batch results go to stdout; all-failed batches and top-level errors go to stderr. Any failure exits with code 1. `--no-visual` keeps its URL/`FAILED` lines; help and version output are unchanged.
 
 <details>
 <summary>Successful execution</summary>
@@ -152,7 +153,8 @@ vot-cli --json ...
       "status": "failed",
       "type": "audio",
       "videoId": null,
-      "url": null
+      "url": null,
+      "error": "Invalid URL"
     }
   ]
 }

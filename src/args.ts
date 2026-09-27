@@ -27,4 +27,19 @@ function getArgs(): ArgsInfo {
   };
 }
 
-export { getArgs };
+function isJsonRequested(args = process.argv.slice(2)) {
+  try {
+    return Boolean(
+      parseArgs({
+        options: schema,
+        strict: false,
+        allowPositionals: true,
+        args,
+      }).values.json,
+    );
+  } catch {
+    return false;
+  }
+}
+
+export { getArgs, isJsonRequested };

@@ -2,8 +2,7 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-
-import { getArgs } from "./args";
+import { getArgs, isJsonRequested } from "./args";
 import { executeVOT } from "./client";
 import { sendCLIVersion, sendHelpMessage } from "./resources/messages";
 
@@ -38,12 +37,37 @@ async function main() {
     await ensureOutputDir(path.resolve(outDirName));
   }
 
-  return await executeVOT({ values, positionals });
+  const result = await executeVOT({ values, positionals });
+  if (result.mode === "visual") {
+    if (result.failed) process.exitCode = 1;
+    return;
+  }
+
+  const output = values.json
+    ? JSON.stringify({
+        ok: !result.failed,
+        summary: {
+          total: result.results.length,
+          success: result.results.filter(({ status }) => status === "success")
+            .length,
+          failed: result.results.filter(({ status }) => status === "failed")
+            .length,
+        },
+        results: result.results,
+      })
+    : result.results.map(({ url }) => url ?? "FAILED").join("\n");
+  process[result.hasSuccess ? "stdout" : "stderr"].write(`${output}\n`);
+  if (result.failed) process.exitCode = 1;
 }
 
 try {
   await main();
 } catch (err) {
-  console.error((err as Error).message);
+  const message = err instanceof Error ? err.message : String(err);
+  if (isJsonRequested()) {
+    process.stderr.write(`${JSON.stringify({ ok: false, error: message })}\n`);
+  } else {
+    console.error(message);
+  }
   process.exitCode = 1;
 }
