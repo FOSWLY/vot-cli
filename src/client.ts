@@ -97,7 +97,6 @@ async function translateVideoImpl(
   );
 
   return new Promise((resolve, reject) => {
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     timer = setTimeout(async () => {
       try {
         const translationResult = await translateVideoImpl(
@@ -448,28 +447,20 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
   const results = positionals.map((positional) => {
     const context = tasks.ctx[positional];
     const videoId = context?.videoData.videoId ?? null;
-    if (context?.translationResult) {
+    if (
+      (context?.translationResult || context?.subtitles) &&
+      (preview || context.outputPath)
+    ) {
       hasSuccess = true;
       successCount += 1;
+      const url =
+        context.translationResult?.url ?? context.subtitles!.translatedUrl;
       return {
         input: positional,
         status: "success",
         type: outputType,
         videoId,
-        url: context.translationResult.url,
-        ...(context.outputPath ? { outputPath: context.outputPath } : {}),
-      };
-    }
-
-    if (context?.subtitles) {
-      hasSuccess = true;
-      successCount += 1;
-      return {
-        input: positional,
-        status: "success",
-        type: outputType,
-        videoId,
-        url: context.subtitles.translatedUrl,
+        url,
         ...(context.outputPath ? { outputPath: context.outputPath } : {}),
       };
     }
