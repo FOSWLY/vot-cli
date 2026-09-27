@@ -46,9 +46,9 @@ ALWAYS write changelog entries in Russian. You MUST use user-friendly language a
 - Regenerate config and schema only: `bun run update:all`.
 - Build Node output in `dist/`: `bun run build` (or its `build:bun` alias). `build:raw` runs `tsc` followed by `tsc-esm-fix`.
 - Cross-compile standalone binaries into `build/`: `bun run compile`.
+- Use Bun for tests (`bun test`) and external scripts (`bun run <script-path>`).
 - Lint: `bun run lint`; auto-fix: `bun run lint:fix`.
 - Format check/write with oxfmt: `bun run fmt:check` / `bun run fmt`.
-- There is no test script or CI runtime smoke test; verify changes with lint, format check, and the relevant build command.
 
 ## Tooling Quirks
 

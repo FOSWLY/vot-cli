@@ -430,12 +430,17 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
     {
       concurrent: true,
       exitOnError: false,
+      collectErrors: !isOutputOnly,
       silentRendererCondition: isOutputOnly,
     },
   );
 
   await tasks.run();
   if (!isOutputOnly) {
+    if (tasks.errors?.length) {
+      process.exitCode = 1;
+    }
+
     return;
   }
 
