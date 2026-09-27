@@ -83,18 +83,37 @@ test("JSON is not inferred from a string option value", () => {
   expect(result.stderr.startsWith("{")).toBe(false);
 });
 
+let subtitleResponse = {
+  subtitles: [
+    {
+      translatedLanguage: "en",
+      translatedUrl: "https://example.test/subtitle.srt",
+    },
+  ],
+};
+const translationRequests: Record<string, unknown>[] = [];
+const translationDelays: number[] = [];
+let translate = async () => ({
+  translated: true,
+  remainingTime: 0,
+  url: "https://example.test/audio.mp3",
+});
+
 mock.module("@vot.js/node", () => ({
   default: class {
-    provider = {};
-    translateVideo = async () => ({
-      translated: true,
-      remainingTime: 0,
-      url: "https://example.test/audio.mp3",
-    });
+    provider = { apiToken: "provider-token" };
+    translateVideo = async (request: Record<string, unknown>) => {
+      translationRequests.push(request);
+      return translate();
+    };
+    getSubtitles = async () => subtitleResponse;
   },
 }));
 mock.module("@vot.js/node/utils/videoData", () => ({
   getVideoData: async (input: string) => {
+    if (input === "slow-input") {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
     if (input === "invalid-input") throw new Error("Mock invalid URL");
     return { videoId: "mock-video" };
   },
@@ -110,6 +129,11 @@ mock.module("@vot.js/core/providers/yandex", () => ({ YandexProvider: {} }));
 mock.module("yt-dlp-wrap-plus", () => ({
   default: class {
     getVersion = async () => "mock-version";
+  },
+}));
+mock.module("node:timers/promises", () => ({
+  setTimeout: async (milliseconds: number) => {
+    translationDelays.push(milliseconds);
   },
 }));
 
@@ -151,7 +175,7 @@ test("mixed JSON batches are written to stdout while exiting unsuccessfully", as
     });
   } finally {
     process.argv = originalArgv;
-    process.exitCode = originalExitCode;
+    process.exitCode = originalExitCode ?? 0;
     process.stdout.write = originalStdoutWrite;
     process.stderr.write = originalStderrWrite;
   }
@@ -175,6 +199,251 @@ test("mixed batches retain success and failure details", async () => {
   });
 });
 
+test("concurrent output results stay in input order", async () => {
+  const { executeVOT } = await import("../src/client");
+  const result = await executeVOT({
+    values: { json: true, preview: true },
+    positionals: ["slow-input", "valid-input"],
+  });
+
+  expect(result).toMatchObject({
+    results: [{ input: "slow-input" }, { input: "valid-input" }],
+  });
+});
+
+test("processor reports stages and returns preview results without terminal output", async () => {
+  const { createProcessingContext, processUrl } =
+    await import("../src/processor");
+  const context = await createProcessingContext({ preview: true });
+  const events: string[] = [];
+  const originalWrite = process.stdout.write;
+  const write = mock(() => true);
+  process.stdout.write = write as unknown as typeof process.stdout.write;
+
+  try {
+    const result = await processUrl("valid-input", context, (event) =>
+      events.push(event.type === "stage" ? event.stage : event.type),
+    );
+    expect(result).toMatchObject({
+      input: "valid-input",
+      status: "success",
+      type: "audio",
+      videoId: "mock-video",
+      url: "https://example.test/audio.mp3",
+    });
+    expect(events).toEqual([
+      "metadata",
+      "videoId",
+      "translation",
+      "translationFinished",
+      "output",
+      "finished",
+    ]);
+    expect(write).not.toHaveBeenCalled();
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+});
+
+test("processor returns metadata and subtitle failures with the available video ID", async () => {
+  const { createProcessingContext, processUrl } =
+    await import("../src/processor");
+  const metadataContext = await createProcessingContext({ preview: true });
+  expect(await processUrl("invalid-input", metadataContext)).toMatchObject({
+    status: "failed",
+    videoId: null,
+    error: "Mock invalid URL",
+  });
+
+  subtitleResponse = { subtitles: [] };
+  const subtitleContext = await createProcessingContext({
+    preview: true,
+    subs: true,
+  });
+  try {
+    expect(await processUrl("valid-input", subtitleContext)).toMatchObject({
+      status: "failed",
+      videoId: "mock-video",
+      error: "No subtitles",
+    });
+  } finally {
+    subtitleResponse = {
+      subtitles: [
+        {
+          translatedLanguage: "en",
+          translatedUrl: "https://example.test/subtitle.srt",
+        },
+      ],
+    };
+  }
+});
+
+test("processor selects the requested subtitle language", async () => {
+  const { createProcessingContext, processUrl } =
+    await import("../src/processor");
+  const context = await createProcessingContext({
+    preview: true,
+    subs: true,
+    reslang: "en",
+  });
+  expect(await processUrl("valid-input", context)).toMatchObject({
+    status: "success",
+    type: "subtitles",
+    url: "https://example.test/subtitle.srt",
+  });
+});
+
+test("processor preserves lively voice defaults and checks the client token", async () => {
+  const { createProcessingContext, processUrl } =
+    await import("../src/processor");
+  const calls = [
+    {
+      values: {
+        lang: "en",
+        reslang: "ru",
+        "lively-voice": true,
+        preview: true,
+      },
+    },
+    { values: { lang: "en", reslang: "ru", preview: true } },
+    {
+      values: {
+        lang: "en",
+        reslang: "ru",
+        "lively-voice": false,
+        preview: true,
+      },
+    },
+  ] as const;
+  const start = translationRequests.length;
+  const results = await Promise.all(
+    calls.map(async ({ values }) => {
+      const context = await createProcessingContext(values);
+      return processUrl("valid-input", context);
+    }),
+  );
+
+  expect(results.map(({ status }) => status)).toEqual([
+    "success",
+    "success",
+    "success",
+  ]);
+  const requests = translationRequests.slice(start);
+  expect(requests.map(({ requestLang }) => requestLang)).toEqual([
+    "en",
+    "en",
+    "en",
+  ]);
+  expect(requests.map(({ responseLang }) => responseLang)).toEqual([
+    "ru",
+    "ru",
+    "ru",
+  ]);
+  expect(
+    requests
+      .map(
+        ({ extraOpts }) =>
+          (extraOpts as { useLivelyVoice: boolean }).useLivelyVoice,
+      )
+      .toSorted(),
+  ).toEqual([false, true, true]);
+});
+
+test("translation polling waits between pending responses and finishes once", async () => {
+  const { createProcessingContext, processUrl } =
+    await import("../src/processor");
+  const responses = [
+    { translated: false, remainingTime: 60, url: "" },
+    { translated: false, remainingTime: 30, url: "" },
+    {
+      translated: true,
+      remainingTime: 0,
+      url: "https://example.test/done.mp3",
+    },
+  ];
+  const originalTranslate = translate;
+  const originalDelaysLength = translationDelays.length;
+  const originalRequestsLength = translationRequests.length;
+  const events: string[] = [];
+  translate = async () => responses.shift()!;
+
+  try {
+    const context = await createProcessingContext({ preview: true });
+    const result = await processUrl("valid-input", context, (event) =>
+      events.push(
+        event.type === "translationWaiting"
+          ? `waiting:${event.seconds}`
+          : event.type,
+      ),
+    );
+
+    expect(result).toMatchObject({
+      status: "success",
+      url: "https://example.test/done.mp3",
+    });
+    expect(events).toEqual([
+      "stage",
+      "videoId",
+      "stage",
+      "waiting:60",
+      "waiting:30",
+      "translationFinished",
+      "stage",
+      "stage",
+    ]);
+    expect(translationDelays.slice(originalDelaysLength)).toEqual([
+      30_000, 30_000,
+    ]);
+    expect(translationRequests.slice(originalRequestsLength)).toHaveLength(3);
+  } finally {
+    translate = originalTranslate;
+  }
+});
+
+test("translation polling returns a failed result when a later request fails", async () => {
+  const { createProcessingContext, processUrl } =
+    await import("../src/processor");
+  const originalTranslate = translate;
+  const originalDelaysLength = translationDelays.length;
+  let calls = 0;
+  const events: string[] = [];
+  translate = async () => {
+    if (calls++ === 0) return { translated: false, remainingTime: 30, url: "" };
+    throw new Error("Mock later poll failure");
+  };
+
+  try {
+    const context = await createProcessingContext({ preview: true });
+    const result = await processUrl("valid-input", context, (event) =>
+      events.push(event.type),
+    );
+
+    expect(result).toMatchObject({
+      status: "failed",
+      videoId: "mock-video",
+      error: "Mock later poll failure",
+    });
+    expect(calls).toBe(2);
+    expect(translationDelays.slice(originalDelaysLength)).toEqual([30_000]);
+    expect(events).toContain("translationWaiting");
+    expect(events).not.toContain("translationFinished");
+  } finally {
+    translate = originalTranslate;
+  }
+});
+
+test("processing context reserves unique filenames across URLs", async () => {
+  const { createProcessingContext } = await import("../src/processor");
+  const outdir = await fs.mkdtemp(path.join(os.tmpdir(), "vot-cli-names-"));
+  try {
+    const context = await createProcessingContext({ outdir });
+    expect(context.reserveFilename("same", "mp3")).toBe("same.mp3");
+    expect(context.reserveFilename("same", "mp3")).toBe("same_2.mp3");
+  } finally {
+    await fs.rm(outdir, { recursive: true, force: true });
+  }
+});
+
 test("download-stage errors are not reported as successful translations", async () => {
   const { executeVOT } = await import("../src/client");
   const originalFetch = globalThis.fetch;
@@ -193,6 +462,7 @@ test("download-stage errors are not reported as successful translations", async 
       results: [
         {
           status: "failed",
+          videoId: "mock-video",
           error: "Failed to download audio, because Mock download failure",
         },
       ],
