@@ -4,6 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, mock, test } from "bun:test";
 
+import VOTConfig from "@vot.js/shared/config";
+
 import { isJsonRequested } from "../src/args";
 
 const cliPath = fileURLToPath(new URL("../src/index.ts", import.meta.url));
@@ -101,9 +103,24 @@ let translate = async () => ({
   url: "https://example.test/audio.mp3",
 });
 
+const audioRequests: unknown[][] = [];
+const failedAudioRequests: unknown[][] = [];
+let requestAudio = async (..._args: unknown[]) => ({ status: 1 });
+const mockProvider = {
+  apiToken: "provider-token",
+  requestVtransAudio: (...args: unknown[]) => {
+    audioRequests.push(args);
+    return requestAudio(...args);
+  },
+  requestVtransFailAudio: async (...args: unknown[]) => {
+    failedAudioRequests.push(args);
+    return { status: 1 };
+  },
+};
+
 mock.module("@vot.js/node", () => ({
   default: class {
-    provider = { apiToken: "provider-token" };
+    provider = mockProvider;
     translateVideo = async (request: Record<string, unknown>) => {
       translationRequests.push(request);
       return translate();
@@ -127,7 +144,13 @@ mock.module("@vot.js/node/utils/videoData", () => ({
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
     if (input === "invalid-input") throw new Error("Mock invalid URL");
-    return { videoId: "mock-video" };
+    return {
+      videoId: "mock-video",
+      url:
+        input === "other-service-input"
+          ? "https://example.test/video"
+          : "https://youtu.be/mock-video",
+    };
   },
 }));
 mock.module("@vot.js/node/utils/fetchAgent", () => ({
@@ -176,7 +199,12 @@ test("mixed JSON batches are written to stdout while exiting unsuccessfully", as
   try {
     await import("../src/index");
     expect(process.exitCode).toBe(1);
-    expect(stderr).toBe("");
+    expect(
+      stderr
+        .split("\n")
+        .filter((line) => line && !line.startsWith("[vot-debug "))
+        .join("\n"),
+    ).toBe("");
     expect(JSON.parse(stdout)).toMatchObject({
       ok: false,
       summary: { total: 2, success: 1, failed: 1 },
@@ -674,4 +702,339 @@ test("audio stream failures clean owned partial files and preserve destinations"
     globalThis.fetch = originalFetch;
     await fs.rm(outdir, { recursive: true, force: true });
   }
+});
+
+const audioRequestedResponse = {
+  translated: false,
+  remainingTime: 120,
+  url: "",
+  status: 6,
+  translationId: "mock-translation",
+};
+const finishedResponse = {
+  translated: true,
+  remainingTime: 0,
+  url: "https://example.test/done.mp3",
+  status: 1,
+  translationId: "mock-translation",
+};
+
+async function* audioSource(...pieces: Uint8Array[]) {
+  yield* pieces;
+}
+
+async function* failingAudioSource(): AsyncGenerator<Uint8Array> {
+  yield new Uint8Array([1]);
+  throw new Error("Mock yt-dlp failure");
+}
+
+async function runAudioRequestedFlow(
+  responses: (typeof audioRequestedResponse | typeof finishedResponse)[],
+  configure: (context: {
+    ytDlpSupported: boolean;
+    downloadAudio: (url: string) => AsyncIterable<Uint8Array>;
+  }) => void,
+  input = "valid-input",
+) {
+  const { createProcessingContext, processUrl } =
+    await import("../src/processor");
+  const originalTranslate = translate;
+  const delaysStart = translationDelays.length;
+  const requestsStart = translationRequests.length;
+  const events: string[] = [];
+  audioRequests.length = 0;
+  failedAudioRequests.length = 0;
+  translate = async () => responses.shift()!;
+
+  try {
+    const context = await createProcessingContext({ preview: true });
+    configure(context);
+    const result = await processUrl(input, context, (event) => {
+      if (event.type === "audioUpload") {
+        events.push(`audioUpload:${event.chunks}`);
+      } else if (event.type === "audioUploadFailed") {
+        events.push(`audioUploadFailed:${event.error}`);
+      } else {
+        events.push(event.type);
+      }
+    });
+    return {
+      result,
+      events,
+      delays: translationDelays.slice(delaysStart),
+      requests: translationRequests.slice(requestsStart),
+    };
+  } finally {
+    translate = originalTranslate;
+    requestAudio = async () => ({ status: 1 });
+  }
+}
+
+test("audio chunks are at least the chunk size and the last one is known", async () => {
+  const { chunkAudio } = await import("../src/audioUpload");
+  const collect = async (pieces: number[], chunkSize: number) => {
+    const chunks: { size: number; isLast: boolean }[] = [];
+    for await (const { audioFile, isLast } of chunkAudio(
+      audioSource(...pieces.map((size) => new Uint8Array(size).fill(size))),
+      chunkSize,
+    )) {
+      chunks.push({ size: audioFile.length, isLast });
+    }
+    return chunks;
+  };
+
+  expect(await collect([2, 1, 3, 2, 1], 4)).toEqual([
+    { size: 6, isLast: false },
+    { size: 3, isLast: true },
+  ]);
+  expect(await collect([4, 4], 4)).toEqual([
+    { size: 4, isLast: false },
+    { size: 4, isLast: true },
+  ]);
+  expect(await collect([2], 4)).toEqual([{ size: 2, isLast: true }]);
+  await expect(collect([], 4)).rejects.toThrow("Audio is empty");
+});
+
+test("audio requested status uploads yt-dlp audio in chunks and re-requests immediately", async () => {
+  const chunkSize = VOTConfig.minChunkSize;
+  const downloadedUrls: string[] = [];
+  const { result, events, delays, requests } = await runAudioRequestedFlow(
+    [audioRequestedResponse, finishedResponse],
+    (context) => {
+      context.downloadAudio = (url) => {
+        downloadedUrls.push(url);
+        return audioSource(
+          new Uint8Array(chunkSize).fill(1),
+          new Uint8Array(chunkSize).fill(2),
+          new Uint8Array(10).fill(3),
+        );
+      };
+    },
+  );
+
+  expect(result).toMatchObject({
+    status: "success",
+    url: "https://example.test/done.mp3",
+  });
+  expect(downloadedUrls).toEqual(["https://youtu.be/mock-video"]);
+  expect(failedAudioRequests).toHaveLength(0);
+  expect(audioRequests).toHaveLength(3);
+  const fileIds = new Set(
+    audioRequests.map(
+      ([, , , partialAudio]) => (partialAudio as { fileId: string }).fileId,
+    ),
+  );
+  expect(fileIds.size).toBe(1);
+  expect([...fileIds][0]).toMatch(/^random-web_abr-[0-9a-f-]{36}$/);
+  audioRequests.forEach(
+    ([url, translationId, audioBuffer, partialAudio], index) => {
+      expect(url).toBe("https://youtu.be/mock-video");
+      expect(translationId).toBe("mock-translation");
+      expect(audioBuffer).toMatchObject({ chunkId: index });
+      expect(partialAudio).toMatchObject({
+        audioPartsLength: index === 2 ? 3 : 0,
+        version: 1,
+      });
+    },
+  );
+  expect(
+    audioRequests.map(([, , audioBuffer]) => {
+      const { audioFile } = audioBuffer as { audioFile: Uint8Array };
+      return [audioFile.length, audioFile[0]];
+    }),
+  ).toEqual([
+    [chunkSize, 1],
+    [chunkSize, 2],
+    [10, 3],
+  ]);
+  expect(events).toContain("audioUpload:1");
+  expect(events).toContain("audioUpload:3");
+  expect(delays).toEqual([]);
+  expect(requests).toHaveLength(2);
+  expect(
+    requests.every(
+      ({ shouldSendFailedAudio }) => shouldSendFailedAudio === false,
+    ),
+  ).toBe(true);
+});
+
+test("audio chunk uploads are retried before falling back", async () => {
+  let failures = 2;
+  requestAudio = async () => {
+    if (failures-- > 0) throw new Error("Mock upload failure");
+    return { status: 1 };
+  };
+  const retried = await runAudioRequestedFlow(
+    [audioRequestedResponse, finishedResponse],
+    (context) => {
+      context.downloadAudio = () => audioSource(new Uint8Array([1, 2, 3]));
+    },
+  );
+
+  expect(retried.result.status).toBe("success");
+  expect(audioRequests).toHaveLength(3);
+  expect(failedAudioRequests).toHaveLength(0);
+
+  requestAudio = async (...args) => {
+    const audioBuffer = args[2] as { audioFile: Uint8Array };
+    if (audioBuffer.audioFile.length) throw new Error("Mock upload failure");
+    return { status: 1 };
+  };
+  const exhausted = await runAudioRequestedFlow(
+    [audioRequestedResponse, finishedResponse],
+    (context) => {
+      context.downloadAudio = () => audioSource(new Uint8Array([1, 2, 3]));
+    },
+  );
+
+  expect(exhausted.result.status).toBe("success");
+  expect(exhausted.events).toContain("audioUploadFailed:Mock upload failure");
+  expect(audioRequests).toHaveLength(4);
+  expect(failedAudioRequests).toHaveLength(1);
+});
+
+test("failed audio download sends the fail audio fallback only once", async () => {
+  const { result, events, delays, requests } = await runAudioRequestedFlow(
+    [audioRequestedResponse, audioRequestedResponse, finishedResponse],
+    (context) => {
+      context.downloadAudio = failingAudioSource;
+    },
+  );
+
+  expect(result.status).toBe("success");
+  expect(
+    events.filter((event) => event.startsWith("audioUploadFailed")),
+  ).toEqual(["audioUploadFailed:Mock yt-dlp failure"]);
+  expect(failedAudioRequests).toEqual([
+    ["https://youtu.be/mock-video", expect.anything()],
+  ]);
+  expect(audioRequests).toHaveLength(1);
+  const [url, translationId, audioBuffer, partialAudio] = audioRequests[0]!;
+  expect(url).toBe("https://youtu.be/mock-video");
+  expect(translationId).toBe("mock-translation");
+  expect(audioBuffer).toEqual({
+    audioFile: new Uint8Array(0),
+    fileId: "fallback-empty-audio:video-translation:mock-video",
+  });
+  expect(partialAudio).toBeUndefined();
+  expect(delays).toEqual([30_000]);
+  expect(requests).toHaveLength(3);
+});
+
+test("unsupported yt-dlp sends the fail audio fallback without downloading", async () => {
+  const downloadAudio = mock(() => audioSource());
+  const { result } = await runAudioRequestedFlow(
+    [audioRequestedResponse, audioRequestedResponse, finishedResponse],
+    (context) => {
+      context.ytDlpSupported = false;
+      context.downloadAudio = downloadAudio;
+    },
+  );
+
+  expect(result.status).toBe("success");
+  expect(downloadAudio).not.toHaveBeenCalled();
+  expect(failedAudioRequests).toHaveLength(1);
+  expect(audioRequests).toHaveLength(1);
+});
+
+test("fail audio fallback is skipped for non-YouTube URLs", async () => {
+  const { result, delays } = await runAudioRequestedFlow(
+    [audioRequestedResponse, finishedResponse],
+    (context) => {
+      context.ytDlpSupported = false;
+    },
+    "other-service-input",
+  );
+
+  expect(result.status).toBe("success");
+  expect(failedAudioRequests).toHaveLength(0);
+  expect(audioRequests).toHaveLength(0);
+  expect(delays).toEqual([]);
+});
+
+test("fail audio fallback errors fail the task", async () => {
+  requestAudio = async () => {
+    throw new Error("Mock fallback failure");
+  };
+  const { result } = await runAudioRequestedFlow(
+    [audioRequestedResponse, finishedResponse],
+    (context) => {
+      context.ytDlpSupported = false;
+    },
+  );
+
+  expect(result).toMatchObject({
+    status: "failed",
+    error: "Failed to send empty audio, because Mock fallback failure",
+  });
+});
+
+test("fail audio fallback errors include the audio upload failure", async () => {
+  requestAudio = async () => {
+    throw new Error("Mock fallback failure");
+  };
+  const { result, events } = await runAudioRequestedFlow(
+    [audioRequestedResponse, finishedResponse],
+    (context) => {
+      context.downloadAudio = failingAudioSource;
+    },
+  );
+
+  expect(events).toContain("audioUploadFailed:Mock yt-dlp failure");
+  expect(result).toMatchObject({
+    status: "failed",
+    error:
+      "Failed to send empty audio, because Mock fallback failure; audio upload failed, because Mock yt-dlp failure",
+  });
+});
+
+test("audio upload failures are not reported without yt-dlp", async () => {
+  const { events } = await runAudioRequestedFlow(
+    [audioRequestedResponse, audioRequestedResponse, finishedResponse],
+    (context) => {
+      context.ytDlpSupported = false;
+    },
+  );
+
+  expect(events.some((event) => event.startsWith("audioUploadFailed"))).toBe(
+    false,
+  );
+});
+
+test("yt-dlp failures report the last error line", async () => {
+  const { ytDlpFailureMessage } = await import("../src/audioUpload");
+
+  expect(
+    ytDlpFailureMessage(
+      1,
+      "[youtube] Extracting URL\nERROR: [youtube] abc: Sign in to confirm\nWARNING: retrying\n",
+    ),
+  ).toBe("yt-dlp exited with code 1: ERROR: [youtube] abc: Sign in to confirm");
+  expect(ytDlpFailureMessage(1, "first\r\n\r\n  last line  \r\n")).toBe(
+    "yt-dlp exited with code 1: last line",
+  );
+  expect(ytDlpFailureMessage(2, " \n")).toBe("yt-dlp exited with code 2");
+  expect(ytDlpFailureMessage(null, "")).toBe("yt-dlp exited with code null");
+});
+
+test("repeated audio requested status after a successful upload waits instead of uploading again", async () => {
+  const downloadAudio = mock(() => audioSource(new Uint8Array([1, 2, 3])));
+  const { result, delays, requests } = await runAudioRequestedFlow(
+    [audioRequestedResponse, audioRequestedResponse, finishedResponse],
+    (context) => {
+      context.downloadAudio = downloadAudio;
+    },
+  );
+
+  expect(result.status).toBe("success");
+  expect(downloadAudio).toHaveBeenCalledTimes(1);
+  expect(audioRequests).toHaveLength(1);
+  const [url, translationId, audioBuffer, partialAudio] = audioRequests[0]!;
+  expect(url).toBe("https://youtu.be/mock-video");
+  expect(translationId).toBe("mock-translation");
+  expect(audioBuffer).toMatchObject({ chunkId: 0 });
+  expect(partialAudio).toMatchObject({ audioPartsLength: 1, version: 1 });
+  expect(failedAudioRequests).toHaveLength(0);
+  expect(delays).toEqual([30_000]);
+  expect(requests).toHaveLength(3);
 });

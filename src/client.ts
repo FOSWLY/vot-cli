@@ -29,6 +29,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
   const tasks = new Listr(
     positionals.map((input, index) => ({
       title: progressTitle(input, undefined, ""),
+      rendererOptions: { persistentOutput: true },
       task: async (_ctx, task) => {
         let currentVideoId: string | undefined;
         const setStage = (text: string) => {
@@ -55,6 +56,15 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
                 String(event.seconds),
               ),
             );
+          } else if (event.type === "audioUpload") {
+            setStage(
+              phrases.UploadingAudioWithChunks.replace(
+                "{0}",
+                String(event.chunks),
+              ),
+            );
+          } else if (event.type === "audioUploadFailed") {
+            task.output = phrases.AudioUploadFailed.replace("{0}", event.error);
           } else if (event.type === "translationFinished") {
             setStage(phrases.VideoSuccessfullyTranslated);
           } else if (event.type === "downloadProgress") {

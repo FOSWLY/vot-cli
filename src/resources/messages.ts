@@ -6,6 +6,7 @@ import {
 } from "@vot.js/shared/consts";
 
 import config from "../config";
+import { getYtDlpVersion } from "../ytdlp";
 
 const setHeader = (text: string) => bold(underline(text));
 
@@ -144,17 +145,21 @@ function sendHelpMessage(json?: boolean) {
   return console.log(HELP_MESSAGE);
 }
 
-function sendCLIVersion(json?: boolean) {
+async function sendCLIVersion(json?: boolean) {
+  const ytDlpVersion = await getYtDlpVersion();
   if (json) {
     return console.log(
       JSON.stringify({
         version: config.version,
         runtime: CURRENT_RUNTIME,
+        ytDlpVersion,
       }),
     );
   }
 
-  return console.log(`vot-cli ${config.version} (${CURRENT_RUNTIME})`);
+  return console.log(
+    `vot-cli ${config.version} (${CURRENT_RUNTIME}) with yt-dlp ${ytDlpVersion ?? "not found"}`,
+  );
 }
 
 export { sendCLIVersion, sendHelpMessage };

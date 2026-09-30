@@ -4,6 +4,9 @@ export default {
   VideoSuccessfullyTranslated: "Video has been successfully translated",
   WaitingTranslationWithSecs:
     "The translation will take approximately {0} seconds",
+  UploadingAudioWithChunks:
+    "Uploading audio for translation ({0} parts sent)...",
+  AudioUploadFailed: "Failed to upload audio: {0}",
   GettingVideoData: "Getting video data",
   TranslatingVideo: "Translating video",
   GettingSubtitles: "Getting subtitles",

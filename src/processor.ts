@@ -14,31 +14,22 @@ import { VOTAgent, VOTProxyAgent } from "@vot.js/node/utils/fetchAgent";
 import { VOTNextWorkerProvider } from "@vot.js/core/providers/votworker";
 import { YandexProvider } from "@vot.js/core/providers/yandex";
 import type { VideoData } from "@vot.js/core/types/client";
+import { VideoTranslationStatus } from "@vot.js/core/types/providers/yandex";
 import type { TranslatedVideoTranslationResponse } from "@vot.js/core/types/providers/yandex";
 import type { SubtitleFormat, SubtitlesData } from "@vot.js/shared/types/subs";
 import type { RequestLang, ResponseLang } from "@vot.js/shared/types/data";
 import { convertSubs } from "@vot.js/shared/utils/subs";
-import _YTDlpWrap from "yt-dlp-wrap-plus";
-
+import { provideAudio, streamYtDlpAudio } from "./audioUpload";
 import type { Schema } from "./types/schema";
-import { isLivelyVoiceAllowed, validateFilename } from "./utils";
+import {
+  debugLog,
+  errorMessage,
+  isLivelyVoiceAllowed,
+  validateFilename,
+} from "./utils";
+import { getYtDlpVersion, ytdlp } from "./ytdlp";
 
 VOTConfig.loggerLevel = LoggerLevel.SILENCE;
-
-// workaround to fix `undefined is not a constructor (evaluating 'new YTDlpWrap')` in node build
-const YTDlpWrap = ((_YTDlpWrap as unknown as { default: typeof _YTDlpWrap })
-  .default ?? _YTDlpWrap) as typeof _YTDlpWrap;
-const ytdlp = new YTDlpWrap();
-let ytDlpSupportedPromise: Promise<boolean> | undefined;
-
-function isYtDlpSupported() {
-  ytDlpSupportedPromise ??= ytdlp
-    .getVersion()
-    .then(() => true)
-    .catch(() => false);
-
-  return ytDlpSupportedPromise;
-}
 
 async function getVideoTitle(url: string, fallback: string) {
   try {
@@ -58,6 +49,8 @@ export type ProgressEvent =
   | { type: "videoId"; videoId: string }
   | { type: "translationWaiting"; seconds: number }
   | { type: "translationFinished" }
+  | { type: "audioUpload"; chunks: number }
+  | { type: "audioUploadFailed"; error: string }
   | { type: "downloadProgress"; received: number; total?: number }
   | { type: "downloadFinished"; filename: string };
 
@@ -79,13 +72,14 @@ export type ProcessingResult =
       error: string;
     };
 
-type ProcessingContext = {
+export type ProcessingContext = {
   values: Partial<Schema>;
   isSubtitles: boolean;
   subtitleFormat: SubtitleFormat;
   client: VOTClient;
   fetchOpts: Record<string, unknown>;
   ytDlpSupported: boolean;
+  downloadAudio: (url: string) => AsyncIterable<Uint8Array>;
   reserveFilename: (filename: string, ext: string) => string;
 };
 
@@ -119,7 +113,9 @@ export async function createProcessingContext(values: Partial<Schema>) {
     subtitleFormat: subtitleFormat ?? "srt",
     client,
     fetchOpts,
-    ytDlpSupported: await isYtDlpSupported(),
+    ytDlpSupported: (await getYtDlpVersion()) !== null,
+    downloadAudio: (url: string) =>
+      streamYtDlpAudio(ytdlp.getBinaryPath(), url, values.lang),
     reserveFilename(filename: string, ext: string) {
       let safeFilename = validateFilename(outDir, filename, ext);
       while (reservedFilenames.has(safeFilename)) {
@@ -136,10 +132,6 @@ export async function createProcessingContext(values: Partial<Schema>) {
   } satisfies ProcessingContext;
 }
 
-function errorMessage(err: unknown) {
-  return err instanceof Error ? err.message : String(err);
-}
-
 async function translateVideo(
   context: ProcessingContext,
   videoData: VideoData,
@@ -149,12 +141,14 @@ async function translateVideo(
   const { values, client } = context;
   const requestLang = values.lang as RequestLang;
   const responseLang = values.reslang as ResponseLang;
+  let audioProvided = false;
   while (true) {
     // eslint-disable-next-line no-await-in-loop
     const result = await client.translateVideo({
       videoData,
       requestLang,
       responseLang,
+      shouldSendFailedAudio: false,
       extraOpts: {
         useLivelyVoice:
           useLivelyVoice &&
@@ -166,9 +160,33 @@ async function translateVideo(
       },
     });
 
+    debugLog("translateVideo", {
+      input: videoData.url,
+      videoId: videoData.videoId,
+      status: result.status,
+      translated: result.translated,
+      remainingTime: result.remainingTime,
+      translationId: result.translationId,
+      url: "url" in result ? result.url : undefined,
+      audioProvided,
+    });
+
     if (result.translated && result.remainingTime < 1) {
       onProgress?.({ type: "translationFinished" });
       return result;
+    }
+
+    if (
+      result.status === VideoTranslationStatus.AUDIO_REQUESTED &&
+      !audioProvided
+    ) {
+      audioProvided = true;
+      debugLog("translateVideo providing audio", {
+        translationId: result.translationId,
+      });
+      // eslint-disable-next-line no-await-in-loop
+      await provideAudio(context, videoData, result.translationId, onProgress);
+      continue;
     }
 
     onProgress?.({ type: "translationWaiting", seconds: result.remainingTime });
