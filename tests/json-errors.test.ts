@@ -93,6 +93,8 @@ let subtitleResponse = {
 };
 const translationRequests: Record<string, unknown>[] = [];
 const translationDelays: number[] = [];
+let activeMetadataRequests = 0;
+let maxMetadataRequests = 0;
 let translate = async () => ({
   translated: true,
   remainingTime: 0,
@@ -111,6 +113,16 @@ mock.module("@vot.js/node", () => ({
 }));
 mock.module("@vot.js/node/utils/videoData", () => ({
   getVideoData: async (input: string) => {
+    if (input.startsWith("concurrent-")) {
+      activeMetadataRequests++;
+      maxMetadataRequests = Math.max(
+        maxMetadataRequests,
+        activeMetadataRequests,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      activeMetadataRequests--;
+      if (input === "concurrent-fail") throw new Error("Mock task failure");
+    }
     if (input === "slow-input") {
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
@@ -208,6 +220,29 @@ test("concurrent output results stay in input order", async () => {
 
   expect(result).toMatchObject({
     results: [{ input: "slow-input" }, { input: "valid-input" }],
+  });
+});
+
+test("URL tasks are limited to five concurrent jobs", async () => {
+  const { executeVOT } = await import("../src/client");
+  maxMetadataRequests = 0;
+  const inputs = [
+    "concurrent-0",
+    "concurrent-fail",
+    ...Array.from({ length: 6 }, (_, index) => `concurrent-${index + 1}`),
+  ];
+  const result = await executeVOT({
+    values: { json: true, preview: true },
+    positionals: inputs,
+  });
+
+  expect(maxMetadataRequests).toBe(5);
+  expect(result).toMatchObject({
+    failed: true,
+    results: inputs.map((input) => ({
+      input,
+      status: input === "concurrent-fail" ? "failed" : "success",
+    })),
   });
 });
 
@@ -470,5 +505,173 @@ test("download-stage errors are not reported as successful translations", async 
   } finally {
     globalThis.fetch = originalFetch;
     mock.restore();
+  }
+});
+
+async function waitForFileSize(file: string, size: number, deadline: number) {
+  if ((await fs.stat(file).catch(() => ({ size: 0 }))).size >= size)
+    return true;
+  if (Date.now() >= deadline) return false;
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  return waitForFileSize(file, size, deadline);
+}
+
+test("audio downloads stream to disk and report known and unknown lengths", async () => {
+  const { createProcessingContext, processUrl } =
+    await import("../src/processor");
+  const originalFetch = globalThis.fetch;
+  const outdir = await fs.mkdtemp(path.join(os.tmpdir(), "vot-cli-stream-"));
+  const completions: string[] = [];
+
+  try {
+    const context = await createProcessingContext({ outdir, "no-title": true });
+    let downloadIndex = 0;
+    context.reserveFilename = () => `mock-video-${downloadIndex++}.mp3`;
+
+    const verifyDownload = async (length: number | undefined) => {
+      const filename = `mock-video-${downloadIndex}.mp3`;
+      const progress: { received: number; total?: number }[] = [];
+      let writtenBeforeEnd = false;
+      let pulls = 0;
+      globalThis.fetch = (async () =>
+        new Response(
+          new ReadableStream<Uint8Array>({
+            async pull(controller) {
+              if (pulls++ === 0) {
+                controller.enqueue(new Uint8Array([1, 2]));
+                return;
+              }
+              const file = path.join(outdir, filename);
+              writtenBeforeEnd = await waitForFileSize(
+                file,
+                2,
+                Date.now() + 2_000,
+              );
+              controller.enqueue(new Uint8Array([3, 4]));
+              controller.close();
+            },
+          }),
+          length
+            ? { headers: { "Content-Length": String(length) } }
+            : undefined,
+        )) as unknown as typeof globalThis.fetch;
+
+      const result = await processUrl("valid-input", context, (event) => {
+        if (event.type === "downloadProgress") {
+          progress.push({ received: event.received, total: event.total });
+        } else if (event.type === "downloadFinished") {
+          completions.push(event.filename);
+        }
+      });
+      expect(result.status).toBe("success");
+      expect(writtenBeforeEnd).toBe(true);
+      expect(await fs.readFile(path.join(outdir, filename))).toEqual(
+        Buffer.from([1, 2, 3, 4]),
+      );
+      expect(progress).toEqual([
+        { received: 2, total: length },
+        { received: 4, total: length },
+      ]);
+    };
+    await verifyDownload(4);
+    await verifyDownload(undefined);
+    expect(completions).toEqual(["mock-video-0.mp3", "mock-video-1.mp3"]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    await fs.rm(outdir, { recursive: true, force: true });
+  }
+});
+
+test("audio stream failures clean owned partial files and preserve destinations", async () => {
+  const { createProcessingContext, processUrl } =
+    await import("../src/processor");
+  const originalFetch = globalThis.fetch;
+  const outdir = await fs.mkdtemp(path.join(os.tmpdir(), "vot-cli-stream-"));
+  const context = await createProcessingContext({ outdir, "no-title": true });
+  context.reserveFilename = () => "mock-video.mp3";
+  try {
+    let partialWrittenBeforeError = false;
+    globalThis.fetch = (async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          async pull(controller) {
+            if (!partialWrittenBeforeError) {
+              controller.enqueue(new Uint8Array([1, 2]));
+              const file = path.join(outdir, "mock-video.mp3");
+              partialWrittenBeforeError = await waitForFileSize(
+                file,
+                2,
+                Date.now() + 2_000,
+              );
+            }
+            controller.error(new Error("stream failed"));
+          },
+        }),
+      )) as unknown as typeof globalThis.fetch;
+    const result = await processUrl("valid-input", context);
+    expect(partialWrittenBeforeError).toBe(true);
+    expect(result).toMatchObject({
+      status: "failed",
+      error: "Failed to download audio, because stream failed",
+    });
+    expect(
+      await fs.stat(path.join(outdir, "mock-video.mp3")).catch(() => null),
+    ).toBeNull();
+
+    const immediateBody = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.error(new Error("immediate stream failure"));
+      },
+    });
+    globalThis.fetch = (async () =>
+      new Response(immediateBody)) as unknown as typeof globalThis.fetch;
+    const immediate = await processUrl("valid-input", context);
+    expect(immediate).toMatchObject({
+      status: "failed",
+      error: "Failed to download audio, because immediate stream failure",
+    });
+    expect(
+      await fs.stat(path.join(outdir, "mock-video.mp3")).catch(() => null),
+    ).toBeNull();
+
+    await fs.writeFile(path.join(outdir, "mock-video.mp3"), "keep");
+    let collisionCancelled = false;
+    globalThis.fetch = (async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          cancel() {
+            collisionCancelled = true;
+          },
+        }),
+      )) as unknown as typeof globalThis.fetch;
+    const collision = await processUrl("valid-input", context);
+    expect(collision).toMatchObject({
+      status: "failed",
+      error: expect.stringContaining("EEXIST"),
+    });
+    expect(collisionCancelled).toBe(true);
+    expect(await fs.readFile(path.join(outdir, "mock-video.mp3"), "utf8")).toBe(
+      "keep",
+    );
+
+    let openFailureCancelled = false;
+    context.reserveFilename = () => "missing-parent/audio.mp3";
+    globalThis.fetch = (async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          cancel() {
+            openFailureCancelled = true;
+          },
+        }),
+      )) as unknown as typeof globalThis.fetch;
+    const openFailure = await processUrl("valid-input", context);
+    expect(openFailure).toMatchObject({
+      status: "failed",
+      error: expect.stringContaining("ENOENT"),
+    });
+    expect(openFailureCancelled).toBe(true);
+  } finally {
+    globalThis.fetch = originalFetch;
+    await fs.rm(outdir, { recursive: true, force: true });
   }
 });

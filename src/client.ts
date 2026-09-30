@@ -94,7 +94,7 @@ export async function executeVOT({ values, positionals }: ArgsInfo) {
       },
     })),
     {
-      concurrent: true,
+      concurrent: 5,
       exitOnError: false,
       collectErrors: !isOutputOnly,
       silentRendererCondition: isOutputOnly,

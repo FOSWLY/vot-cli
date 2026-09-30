@@ -1,5 +1,9 @@
 import fs from "node:fs/promises";
+import { createWriteStream } from "node:fs";
 import path from "node:path";
+import { Readable } from "node:stream";
+import { finished, pipeline } from "node:stream/promises";
+import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { setTimeout as delay } from "node:timers/promises";
 
 import VOTConfig from "@vot.js/shared/config";
@@ -179,40 +183,67 @@ async function downloadFile(
   fetchOpts: Record<string, unknown>,
   onProgress?: (event: ProgressEvent) => void,
 ) {
+  let ownsOutput = false;
+  let body: ReadableStream<Uint8Array> | null = null;
+  let writerClosed: Promise<void> | undefined;
+
   try {
     const res = await fetch(src, {
       headers: { "User-Agent": VOTConfig.userAgent },
       ...fetchOpts,
     });
+    body = res.body as ReadableStream<Uint8Array> | null;
     if (!res.ok) throw new Error("Response isn't ok");
-    const readable = res.body as ReadableStream<Uint8Array> | null;
-    if (!readable) throw new Error("Body is null");
+    if (!body) throw new Error("Body is null");
 
     const contentLength = Number(res.headers.get("Content-Length"));
     const hasContentLength =
       Number.isFinite(contentLength) && contentLength > 0;
     let receivedLength = 0;
-    const chunks = [];
-    for await (const value of readable) {
-      chunks.push(value);
-      receivedLength += value.length;
-      onProgress?.({
-        type: "downloadProgress",
-        received: receivedLength,
-        ...(hasContentLength ? { total: contentLength } : {}),
-      });
-    }
-
-    await fs.writeFile(outputPath, chunks, { flag: "wx" });
-    onProgress?.({
-      type: "downloadFinished",
-      filename: outputPath.split(/\\|\//).pop()!,
+    const writer = createWriteStream(outputPath, { flags: "wx" });
+    writerClosed = finished(writer).catch(() => {});
+    writer.once("open", () => {
+      ownsOutput = true;
     });
+    await pipeline(
+      Readable.fromWeb(body as unknown as NodeReadableStream),
+      async function* (source) {
+        for await (const value of source) {
+          receivedLength += value.length;
+          onProgress?.({
+            type: "downloadProgress",
+            received: receivedLength,
+            ...(hasContentLength ? { total: contentLength } : {}),
+          });
+          yield value;
+        }
+      },
+      writer,
+    );
   } catch (err) {
+    if (body && !body.locked) await body.cancel().catch(() => {});
+    await writerClosed;
+    const cleanupError = ownsOutput
+      ? await fs.unlink(outputPath).then(
+          () => undefined,
+          (unlinkError: unknown) => unlinkError ?? new Error("Unknown error"),
+        )
+      : undefined;
+    if (cleanupError) {
+      throw new Error(
+        `Failed to download audio, because ${errorMessage(err)}; additionally failed to remove partial output: ${errorMessage(cleanupError)}`,
+        { cause: err },
+      );
+    }
     throw new Error(`Failed to download audio, because ${errorMessage(err)}`, {
       cause: err,
     });
   }
+
+  onProgress?.({
+    type: "downloadFinished",
+    filename: outputPath.split(/\\|\//).pop()!,
+  });
 }
 
 async function downloadSubtitle(
