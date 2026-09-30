@@ -3,6 +3,7 @@ import { promisify } from "node:util";
 
 import _YTDlpWrap from "yt-dlp-wrap-plus";
 
+import type { Schema } from "./types/schema";
 import { errorMessage } from "./utils";
 
 // workaround to fix `undefined is not a constructor (evaluating 'new YTDlpWrap')` in node build
@@ -18,6 +19,17 @@ export type YtDlpInfo =
 
 const execFileAsync = promisify(execFile);
 let ytDlpInfoPromise: Promise<YtDlpInfo> | undefined;
+
+export function ytDlpCookieArgs(
+  values: Partial<Pick<Schema, "cookies" | "cookies-from-browser">>,
+) {
+  const args: string[] = [];
+  if (values.cookies) args.push("--cookies", values.cookies);
+  if (values["cookies-from-browser"]) {
+    args.push("--cookies-from-browser", values["cookies-from-browser"]);
+  }
+  return args;
+}
 
 export function ytDlpErrorReason(err: unknown) {
   const { code, stderr } = (err ?? {}) as { code?: unknown; stderr?: unknown };

@@ -161,10 +161,17 @@ mock.module("@vot.js/core/providers/votworker", () => ({
   VOTNextWorkerProvider: {},
 }));
 mock.module("@vot.js/core/providers/yandex", () => ({ YandexProvider: {} }));
+const videoInfoRequests: unknown[] = [];
+let videoInfo: unknown;
 mock.module("yt-dlp-wrap-plus", () => ({
   default: class {
     // Any binary that answers `--version` works, and the test runner itself always exists
     getBinaryPath = () => process.execPath;
+    getVideoInfo = async (args: unknown) => {
+      videoInfoRequests.push(args);
+      if (videoInfo === undefined) throw new Error("Mock video info failure");
+      return videoInfo;
+    };
   },
 }));
 mock.module("node:timers/promises", () => ({
@@ -1065,4 +1072,89 @@ test("repeated audio requested status after a successful upload waits instead of
   expect(failedAudioRequests).toHaveLength(0);
   expect(delays).toEqual([30_000]);
   expect(requests).toHaveLength(3);
+});
+
+test("yt-dlp cookie args follow the provided cookie options", async () => {
+  const { ytDlpCookieArgs } = await import("../src/ytdlp");
+
+  expect(ytDlpCookieArgs({})).toEqual([]);
+  expect(ytDlpCookieArgs({ cookies: "cookies.txt" })).toEqual([
+    "--cookies",
+    "cookies.txt",
+  ]);
+  expect(
+    ytDlpCookieArgs({ "cookies-from-browser": "chrome:Profile 1" }),
+  ).toEqual(["--cookies-from-browser", "chrome:Profile 1"]);
+  expect(
+    ytDlpCookieArgs({
+      cookies: "cookies.txt",
+      "cookies-from-browser": "firefox",
+    }),
+  ).toEqual(["--cookies", "cookies.txt", "--cookies-from-browser", "firefox"]);
+});
+
+test("yt-dlp audio args put cookies before the URL", async () => {
+  const { ytDlpAudioArgs } = await import("../src/audioUpload");
+  const url = "https://youtu.be/mock-video";
+
+  const withoutCookies = ytDlpAudioArgs(url, "en");
+  expect(withoutCookies.at(-1)).toBe(url);
+  expect(withoutCookies).not.toContain("--cookies");
+
+  const withCookies = ytDlpAudioArgs(url, "en", [
+    "--cookies",
+    "cookies.txt",
+    "--cookies-from-browser",
+    "firefox",
+  ]);
+  expect(withCookies.slice(-5)).toEqual([
+    "--cookies",
+    "cookies.txt",
+    "--cookies-from-browser",
+    "firefox",
+    url,
+  ]);
+  expect(withCookies).toContain("ba[language^=en]/ba");
+});
+
+test("video title lookup passes cookies to yt-dlp", async () => {
+  const { createProcessingContext, processUrl } =
+    await import("../src/processor");
+  const originalFetch = globalThis.fetch;
+  const outdir = await fs.mkdtemp(path.join(os.tmpdir(), "vot-cli-title-"));
+  videoInfoRequests.length = 0;
+  videoInfo = { title: "Mock title" };
+  globalThis.fetch = (async () =>
+    new Response(new Uint8Array([1, 2]))) as unknown as typeof globalThis.fetch;
+
+  try {
+    const context = await createProcessingContext({
+      outdir,
+      cookies: "cookies.txt",
+      "cookies-from-browser": "firefox",
+    });
+    expect(context.ytDlpCookieArgs).toEqual([
+      "--cookies",
+      "cookies.txt",
+      "--cookies-from-browser",
+      "firefox",
+    ]);
+
+    const result = await processUrl("valid-input", context);
+    expect(result).toMatchObject({ status: "success" });
+    expect(videoInfoRequests).toEqual([
+      [
+        "valid-input",
+        "--cookies",
+        "cookies.txt",
+        "--cookies-from-browser",
+        "firefox",
+      ],
+    ]);
+    expect(await fs.readdir(outdir)).toEqual(["Mock title.mp3"]);
+  } finally {
+    videoInfo = undefined;
+    globalThis.fetch = originalFetch;
+    await fs.rm(outdir, { recursive: true, force: true });
+  }
 });

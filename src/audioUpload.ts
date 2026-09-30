@@ -30,13 +30,13 @@ export function ytDlpFailureMessage(code: number | null, stderr: string) {
     : `yt-dlp exited with code ${code}`;
 }
 
-export async function* streamYtDlpAudio(
-  binaryPath: string,
+export function ytDlpAudioArgs(
   url: string,
   lang?: string,
-): AsyncGenerator<Uint8Array> {
+  cookieArgs: string[] = [],
+) {
   const format = lang && lang !== "auto" ? `ba[language^=${lang}]/ba` : "ba";
-  const args = [
+  return [
     "-f",
     format,
     // Language preference goes first so descriptive audio and dubs lose to the original track
@@ -48,8 +48,18 @@ export async function* streamYtDlpAudio(
     "--no-part",
     "--quiet",
     "--no-warnings",
+    ...cookieArgs,
     url,
   ];
+}
+
+export async function* streamYtDlpAudio(
+  binaryPath: string,
+  url: string,
+  lang?: string,
+  cookieArgs: string[] = [],
+): AsyncGenerator<Uint8Array> {
+  const args = ytDlpAudioArgs(url, lang, cookieArgs);
   debugLog("yt-dlp start", { binaryPath, args });
   const child = spawn(binaryPath, args, {
     stdio: ["ignore", "pipe", "pipe"],

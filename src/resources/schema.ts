@@ -48,6 +48,16 @@ export const schemaObj: SchemaItem[] = [
     aliases: "worker-host",
   },
   {
+    // yt-dlp cookies file
+    type: "string",
+    aliases: "cookies",
+  },
+  {
+    // yt-dlp browser to load cookies from
+    type: "string",
+    aliases: "cookies-from-browser",
+  },
+  {
     // response lang
     type: "string",
     default: config.defaultResLang,

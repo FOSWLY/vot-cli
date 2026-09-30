@@ -60,6 +60,15 @@ const HELP_OPTIONS = [
       "Set vot-worker host ([<PROTOCOL>://]<HOST>[:<port>][/<PREFIX>])",
   },
   {
+    flags: ["--cookies=(path)"],
+    description: "Set the cookies file for yt-dlp (Netscape format)",
+  },
+  {
+    flags: ["--cookies-from-browser=(browser)"],
+    description:
+      "Load cookies for yt-dlp from the browser (e.g. firefox, chrome:Profile 1)",
+  },
+  {
     flags: ["--subs", "--subtitles"],
     description: "Get subtitles instead of audio if exists",
   },

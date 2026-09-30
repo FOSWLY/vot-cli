@@ -11,6 +11,8 @@ export type Schema = {
   help: boolean;
   proxy: string;
   "worker-host": string;
+  cookies: string;
+  "cookies-from-browser": string;
   reslang: ResponseLang;
   lang: RequestLang;
   "lively-voice": boolean;

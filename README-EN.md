@@ -69,6 +69,8 @@ This script lets you:
 - **--reslang=(lang)**: set audio track or subtitle language (see [wiki][supported-langs-wiki] for supported languages). Default: `ru`
 - **--proxy=(url)**: set HTTP or HTTPS proxy in format `[<PROTOCOL>://]<USERNAME>:<PASSWORD>@<HOST>[:<port>]`
 - **--worker-host=(url)**: set your own [vot-worker][vot-worker-link] in format `[<PROTOCOL>://]<HOST>[:<port>][/<PREFIX>]`
+- **--cookies=(path)**: set the cookies file for `yt-dlp` (Netscape format)
+- **--cookies-from-browser=(browser)**: load cookies for `yt-dlp` from the browser (e.g. `firefox` or `chrome:Profile 1`). Required for age-restricted videos
 - **--subs**: get subtitles instead of audio, if available
 - **--subs-format=(format)**: set subtitle format (`json`, `srt`, `vtt`. Does not work with `--preview`)
 - **--preview**: get a download link without downloading
@@ -205,6 +207,9 @@ vot-cli --help --json
 
 ## Installation
 
+> ![NOTE]
+> Also, please install [yt-dlp](https://github.com/yt-dlp/yt-dlp) to translate new YouTube videos and also get video titles for output filenames. If yt-dlp is not found, the script can return errors and video IDs will be used as filenames.
+
 Choose the most convenient way to install `vot-cli`.
 
 ### Pre-built binaries
@@ -235,6 +240,9 @@ Download `vot-windows-x64.exe.zip`, extract `vot-windows-x64.exe`, optionally re
 To make it accessible from anywhere, add its folder to the `PATH` environment variable.
 
 ### Via NPM/Bun (Cross-platform)
+
+> [!WARNING]
+> When running with Deno, grant all permissions at startup; otherwise, the script will not be able to work with files and the network or run yt-dlp, which will cause errors. e.g.: `deno -A src/index.ts <args>`
 
 This option is suitable if you already have [Bun.sh][bun-link] or [Node.js 22.19+][nodejs-link] installed.
 

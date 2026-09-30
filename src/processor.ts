@@ -27,13 +27,19 @@ import {
   isLivelyVoiceAllowed,
   validateFilename,
 } from "./utils";
-import { getYtDlpInfo, ytdlp } from "./ytdlp";
+import { getYtDlpInfo, ytDlpCookieArgs, ytdlp } from "./ytdlp";
 
 VOTConfig.loggerLevel = LoggerLevel.SILENCE;
 
-async function getVideoTitle(url: string, fallback: string) {
+async function getVideoTitle(
+  url: string,
+  fallback: string,
+  cookieArgs: string[],
+) {
   try {
-    const info = (await ytdlp.getVideoInfo(url)) as { title?: unknown };
+    const info = (await ytdlp.getVideoInfo([url, ...cookieArgs])) as {
+      title?: unknown;
+    };
     const title = typeof info.title === "string" ? info.title.trim() : "";
     return title || fallback;
   } catch {
@@ -79,6 +85,7 @@ export type ProcessingContext = {
   client: VOTClient;
   fetchOpts: Record<string, unknown>;
   ytDlpSupported: boolean;
+  ytDlpCookieArgs: string[];
   downloadAudio: (url: string) => AsyncIterable<Uint8Array>;
   reserveFilename: (filename: string, ext: string) => string;
 };
@@ -106,6 +113,7 @@ export async function createProcessingContext(values: Partial<Schema>) {
   });
   const outDir = path.resolve(out ?? outdir ?? ".");
   const reservedFilenames = new Set<string>();
+  const cookieArgs = ytDlpCookieArgs(values);
 
   return {
     values,
@@ -114,8 +122,9 @@ export async function createProcessingContext(values: Partial<Schema>) {
     client,
     fetchOpts,
     ytDlpSupported: (await getYtDlpInfo()).version !== null,
+    ytDlpCookieArgs: cookieArgs,
     downloadAudio: (url: string) =>
-      streamYtDlpAudio(ytdlp.getBinaryPath(), url, values.lang),
+      streamYtDlpAudio(ytdlp.getBinaryPath(), url, values.lang, cookieArgs),
     reserveFilename(filename: string, ext: string) {
       let safeFilename = validateFilename(outDir, filename, ext);
       while (reservedFilenames.has(safeFilename)) {
@@ -342,7 +351,7 @@ export async function processUrl(
       const base =
         outfile || context.values["no-title"] || !context.ytDlpSupported
           ? (outfile ?? videoId)
-          : await getVideoTitle(input, videoId);
+          : await getVideoTitle(input, videoId, context.ytDlpCookieArgs);
       const filename = context.reserveFilename(
         base,
         context.isSubtitles ? context.subtitleFormat : "mp3",
