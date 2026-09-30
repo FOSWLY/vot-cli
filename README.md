@@ -40,6 +40,8 @@
 [![en][badge-en]][gh-readme-en]
 [![ru][badge-ru]][gh-readme-ru]
 
+  <img src="./img/promo.gif" alt="promo gif"/>
+
 </div>
 
 ---
@@ -330,5 +332,3 @@ bun link
 1. Оборачивайте ссылки в кавычки, чтобы избежать ошибок при работе
 2. Для записи в системный раздел (например на "Диск C" в Windows) необходимы права администратора
 3. yt-dlp используется опционально для получения названий видео (см. раздел "Опциональные возможности")
-
-![example btn](https://github.com/FOSWLY/vot-cli/blob/main/img/example.png "example")

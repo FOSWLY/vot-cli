@@ -40,6 +40,8 @@ Tool for translating videos or downloading subtitles using [vot.js][votjs-link]
 [![en][badge-en]][gh-readme-en]
 [![ru][badge-ru]][gh-readme-ru]
 
+  <img src="./img/promo.gif" alt="promo gif"/>
+
 </div>
 
 ---
@@ -330,5 +332,3 @@ You can disable this behavior with the `--no-title` flag.
 1. Wrap links in quotes to avoid errors
 2. Writing to a system partition (e.g., "C: drive" on Windows) requires administrator privileges
 3. yt-dlp is optionally used for fetching video titles (see the "Optional features" section)
-
-![example btn](https://github.com/FOSWLY/vot-cli/blob/main/img/example.png "example")
