@@ -207,12 +207,7 @@ test("mixed JSON batches are written to stdout while exiting unsuccessfully", as
   try {
     await import("../src/index");
     expect(process.exitCode).toBe(1);
-    expect(
-      stderr
-        .split("\n")
-        .filter((line) => line && !line.startsWith("[vot-debug "))
-        .join("\n"),
-    ).toBe("");
+    expect(stderr).toBe("");
     expect(JSON.parse(stdout)).toMatchObject({
       ok: false,
       summary: { total: 2, success: 1, failed: 1 },

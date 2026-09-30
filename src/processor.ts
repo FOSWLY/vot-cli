@@ -21,12 +21,7 @@ import type { RequestLang, ResponseLang } from "@vot.js/shared/types/data";
 import { convertSubs } from "@vot.js/shared/utils/subs";
 import { provideAudio, streamYtDlpAudio } from "./audioUpload";
 import type { Schema } from "./types/schema";
-import {
-  debugLog,
-  errorMessage,
-  isLivelyVoiceAllowed,
-  validateFilename,
-} from "./utils";
+import { errorMessage, isLivelyVoiceAllowed, validateFilename } from "./utils";
 import { getYtDlpInfo, ytDlpCookieArgs, ytdlp } from "./ytdlp";
 
 VOTConfig.loggerLevel = LoggerLevel.SILENCE;
@@ -169,17 +164,6 @@ async function translateVideo(
       },
     });
 
-    debugLog("translateVideo", {
-      input: videoData.url,
-      videoId: videoData.videoId,
-      status: result.status,
-      translated: result.translated,
-      remainingTime: result.remainingTime,
-      translationId: result.translationId,
-      url: "url" in result ? result.url : undefined,
-      audioProvided,
-    });
-
     if (result.translated && result.remainingTime < 1) {
       onProgress?.({ type: "translationFinished" });
       return result;
@@ -190,9 +174,6 @@ async function translateVideo(
       !audioProvided
     ) {
       audioProvided = true;
-      debugLog("translateVideo providing audio", {
-        translationId: result.translationId,
-      });
       // eslint-disable-next-line no-await-in-loop
       await provideAudio(context, videoData, result.translationId, onProgress);
       continue;

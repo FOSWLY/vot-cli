@@ -7,7 +7,7 @@ import type { VideoData } from "@vot.js/core/types/client";
 import { AudioDownloadType } from "@vot.js/core/types/providers/yandex";
 
 import type { ProcessingContext, ProgressEvent } from "./processor";
-import { debugLog, errorMessage } from "./utils";
+import { errorMessage } from "./utils";
 
 type AudioContext = Pick<
   ProcessingContext,
@@ -59,9 +59,7 @@ export async function* streamYtDlpAudio(
   lang?: string,
   cookieArgs: string[] = [],
 ): AsyncGenerator<Uint8Array> {
-  const args = ytDlpAudioArgs(url, lang, cookieArgs);
-  debugLog("yt-dlp start", { binaryPath, args });
-  const child = spawn(binaryPath, args, {
+  const child = spawn(binaryPath, ytDlpAudioArgs(url, lang, cookieArgs), {
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true,
   });
@@ -80,10 +78,6 @@ export async function* streamYtDlpAudio(
   try {
     yield* child.stdout;
     const code = await exitCode;
-    debugLog("yt-dlp exit", {
-      code,
-      failure: code !== 0 ? ytDlpFailureMessage(code, stderr) : undefined,
-    });
     if (code !== 0) {
       throw new Error(ytDlpFailureMessage(code, stderr));
     }
@@ -148,11 +142,6 @@ async function withRetries<T>(action: () => Promise<T>) {
       // eslint-disable-next-line no-await-in-loop
       return await action();
     } catch (err) {
-      debugLog("audio upload attempt failed", {
-        attempt,
-        maxAttempts: AUDIO_UPLOAD_ATTEMPTS,
-        error: err,
-      });
       if (attempt >= AUDIO_UPLOAD_ATTEMPTS) throw err;
       // eslint-disable-next-line no-await-in-loop
       await delay(AUDIO_UPLOAD_RETRY_DELAY);
@@ -174,14 +163,13 @@ async function uploadAudio(
     context.downloadAudio(videoData.url),
     VOTConfig.minChunkSize,
   )) {
-    const audioPartsLength = isLast ? chunkId + 1 : 0;
-    const response = await withRetries(() =>
+    await withRetries(() =>
       provider.requestVtransAudio(
         videoData.url,
         translationId,
         { audioFile, chunkId },
         {
-          audioPartsLength,
+          audioPartsLength: isLast ? chunkId + 1 : 0,
           fileId,
           version: 1,
         },
@@ -189,14 +177,6 @@ async function uploadAudio(
         context.fetchOpts,
       ),
     );
-    debugLog("requestVtransAudio chunk", {
-      chunkId,
-      bytes: audioFile.byteLength,
-      isLast,
-      audioPartsLength,
-      fileId,
-      response,
-    });
     chunkId++;
     onProgress?.({ type: "audioUpload", chunks: chunkId });
   }
@@ -208,18 +188,11 @@ async function sendFailedAudio(
   translationId: string,
 ) {
   const { url, videoId } = videoData;
-  if (!url.startsWith("https://youtu.be/")) {
-    debugLog("fail-audio fallback skipped, not a YouTube url", { url });
-    return;
-  }
+  if (!url.startsWith("https://youtu.be/")) return;
 
   const { provider } = context.client;
-  const failAudioResponse = await provider.requestVtransFailAudio(
-    url,
-    context.fetchOpts,
-  );
-  debugLog("requestVtransFailAudio", failAudioResponse);
-  const emptyAudioResponse = await provider.requestVtransAudio(
+  await provider.requestVtransFailAudio(url, context.fetchOpts);
+  await provider.requestVtransAudio(
     url,
     translationId,
     {
@@ -230,7 +203,6 @@ async function sendFailedAudio(
     undefined,
     context.fetchOpts,
   );
-  debugLog("requestVtransAudio empty", emptyAudioResponse);
 }
 
 export async function provideAudio(
@@ -246,9 +218,6 @@ export async function provideAudio(
       return;
     } catch (err) {
       uploadError = errorMessage(err);
-      debugLog("audio upload failed, falling back to empty audio", {
-        error: uploadError,
-      });
       onProgress?.({ type: "audioUploadFailed", error: uploadError });
     }
   }
