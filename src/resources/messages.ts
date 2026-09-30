@@ -6,7 +6,7 @@ import {
 } from "@vot.js/shared/consts";
 
 import config from "../config";
-import { getYtDlpVersion } from "../ytdlp";
+import { getYtDlpInfo, YT_DLP_NOT_FOUND, type YtDlpInfo } from "../ytdlp";
 
 const setHeader = (text: string) => bold(underline(text));
 
@@ -145,20 +145,28 @@ function sendHelpMessage(json?: boolean) {
   return console.log(HELP_MESSAGE);
 }
 
+function formatYtDlpInfo({ version, error }: YtDlpInfo) {
+  if (version !== null) return `yt-dlp ${version}`;
+  return error === YT_DLP_NOT_FOUND
+    ? `yt-dlp ${YT_DLP_NOT_FOUND}`
+    : `yt-dlp unavailable (${error})`;
+}
+
 async function sendCLIVersion(json?: boolean) {
-  const ytDlpVersion = await getYtDlpVersion();
+  const ytDlpInfo = await getYtDlpInfo();
   if (json) {
     return console.log(
       JSON.stringify({
         version: config.version,
         runtime: CURRENT_RUNTIME,
-        ytDlpVersion,
+        ytDlpVersion: ytDlpInfo.version,
+        ytDlpError: ytDlpInfo.error,
       }),
     );
   }
 
   return console.log(
-    `vot-cli ${config.version} (${CURRENT_RUNTIME}) with yt-dlp ${ytDlpVersion ?? "not found"}`,
+    `vot-cli ${config.version} (${CURRENT_RUNTIME})\n- ${formatYtDlpInfo(ytDlpInfo)}`,
   );
 }
 

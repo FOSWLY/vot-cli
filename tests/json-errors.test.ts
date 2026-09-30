@@ -163,7 +163,8 @@ mock.module("@vot.js/core/providers/votworker", () => ({
 mock.module("@vot.js/core/providers/yandex", () => ({ YandexProvider: {} }));
 mock.module("yt-dlp-wrap-plus", () => ({
   default: class {
-    getVersion = async () => "mock-version";
+    // Any binary that answers `--version` works, and the test runner itself always exists
+    getBinaryPath = () => process.execPath;
   },
 }));
 mock.module("node:timers/promises", () => ({
@@ -1015,6 +1016,33 @@ test("yt-dlp failures report the last error line", async () => {
   );
   expect(ytDlpFailureMessage(2, " \n")).toBe("yt-dlp exited with code 2");
   expect(ytDlpFailureMessage(null, "")).toBe("yt-dlp exited with code null");
+});
+
+test("yt-dlp launch errors separate a missing binary from other failures", async () => {
+  const { ytDlpErrorReason, YT_DLP_NOT_FOUND } = await import("../src/ytdlp");
+
+  expect(
+    ytDlpErrorReason(
+      Object.assign(new Error("spawn yt-dlp ENOENT"), { code: "ENOENT" }),
+    ),
+  ).toBe(YT_DLP_NOT_FOUND);
+  expect(
+    ytDlpErrorReason(
+      new Error(
+        "Requires --allow-run permissions to spawn subprocess with LD_LIBRARY_PATH environment variable.",
+      ),
+    ),
+  ).toBe(
+    "Requires --allow-run permissions to spawn subprocess with LD_LIBRARY_PATH environment variable.",
+  );
+  expect(
+    ytDlpErrorReason(
+      Object.assign(new Error("Command failed: yt-dlp --version"), {
+        code: 1,
+        stderr: "Traceback (most recent call last):\n  ...\nImportError: x\n",
+      }),
+    ),
+  ).toBe("ImportError: x");
 });
 
 test("repeated audio requested status after a successful upload waits instead of uploading again", async () => {

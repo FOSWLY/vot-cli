@@ -27,7 +27,7 @@ import {
   isLivelyVoiceAllowed,
   validateFilename,
 } from "./utils";
-import { getYtDlpVersion, ytdlp } from "./ytdlp";
+import { getYtDlpInfo, ytdlp } from "./ytdlp";
 
 VOTConfig.loggerLevel = LoggerLevel.SILENCE;
 
@@ -113,7 +113,7 @@ export async function createProcessingContext(values: Partial<Schema>) {
     subtitleFormat: subtitleFormat ?? "srt",
     client,
     fetchOpts,
-    ytDlpSupported: (await getYtDlpVersion()) !== null,
+    ytDlpSupported: (await getYtDlpInfo()).version !== null,
     downloadAudio: (url: string) =>
       streamYtDlpAudio(ytdlp.getBinaryPath(), url, values.lang),
     reserveFilename(filename: string, ext: string) {
