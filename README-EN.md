@@ -207,7 +207,7 @@ vot-cli --help --json
 
 ## Installation
 
-> ![NOTE]
+> [!NOTE]
 > Also, please install [yt-dlp](https://github.com/yt-dlp/yt-dlp) to translate new YouTube videos and also get video titles for output filenames. If yt-dlp is not found, the script can return errors and video IDs will be used as filenames.
 
 Choose the most convenient way to install `vot-cli`.
