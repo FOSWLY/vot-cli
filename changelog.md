@@ -1,3 +1,36 @@
+# v2.1.1
+
+- Добавлена поддержка сайтов:
+  - Eporner embed
+  - AcFun
+  - Beacon
+  - Bluesky
+  - BFMTV / RMC BFM
+  - Brightcove
+  - CHZZK
+  - Craftsy
+  - Gettr
+  - Huya
+  - JW Platform
+  - Medal.tv
+  - Naver TV
+  - NYTimes
+  - NZ Herald
+  - OneFootball
+  - RedGifs
+  - Snapchat Spotlight
+  - Vidlii
+  - Vidly
+  - VideoPress
+  - WSJ / Barron's
+  - Zhihu
+- Исправлена работа с:
+  - Banned.video
+  - Archive.org
+- Удалено
+  - madmaxworld.tv (больше не работает)
+- Обновлены зависимости
+
 # v2.1.0
 
 > [!NOTE]

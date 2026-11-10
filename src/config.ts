@@ -7,5 +7,5 @@ export default {
   defaultLang: "en",
   defaultResLang: "ru",
   defaultSubsFormat: "srt",
-  version: "2.1.0",
+  version: "2.1.1",
 } satisfies ConfigSchema;
